@@ -85,12 +85,8 @@ int main(int argc, char const *argv[]) {
 """
 
 measurmentCodeTemplate = """
-<<<<<<< HEAD
 	/* Burn-in phase to minimize cache-effect and check if data-set is okay */
 	for (unsigned int i = 0; i < 2; ++i) {
-=======
-	for (unsigned int i = 0; i < {num_repetitions}; ++i) {
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 		unsigned int acc = 0;
 		for (unsigned int j = 0; j < {N}; ++j) {
 			bool pred = {namespace}_predict(&XTest[{DIM}*j]);
@@ -100,7 +96,6 @@ measurmentCodeTemplate = """
 			std :: cout << "Target accuracy was not met!" << std :: endl;
 			std :: cout << "\t target: {target_acc}" << std :: endl;
 			std :: cout << "\t current:" << acc << std :: endl;
-<<<<<<< HEAD
 			return 1;
 		}
 	}
@@ -133,15 +128,9 @@ measurmentCodeTemplate = """
 	}
 
 	std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
-=======
 		}
 	}
 
-"""
-
-makefileTemplate = """
-
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 """
 
 def writeFiles(basepath, basename, header, cpp):
@@ -225,11 +214,7 @@ def main(argv):
 	if len(argv)>1:
 		reps = argv[1]
 	else:
-<<<<<<< HEAD
 		reps = 10
-=======
-		reps = 1
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith(".json"): 
@@ -257,7 +242,6 @@ def main(argv):
 
 			#print("Generating If-Tree")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-<<<<<<< HEAD
 			generateClassifier(dirpath, X, Y, converter, "StandardIfTree", featureType, loadedForest, "../../" + testname, reps)
 
 			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType))
@@ -269,20 +253,6 @@ def main(argv):
 
 			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType))
 			generateClassifier(dirpath, X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, "../../" + testname, reps)
-=======
-			generateClassifier(dirpath, X, Y, converter, "StandardIfTree", featureType, loadedForest, ".." + testname, reps)
-
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "OptimizedIfTree", featureType, loadedForest, ".." + testname, reps)
-
-			#print("Generating NativeTree")
-			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "StandardNativeTree", featureType, loadedForest, ".." + testname, reps)
-
-			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, ".." + testname, reps)
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
-
 			#print("Generating MixTree")
 			#converter = MixConverter(dim, "MixTree", featureType, turnPoint)
 			#generateClassifier(dirpath, X, Y, converter, "MixTree", featureType, tree, testdata)
@@ -292,25 +262,15 @@ def main(argv):
 CARM = arm-linux-gnueabihf-g++ 
 FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
-<<<<<<< HEAD
-all: intel arm
-
-arm:
-=======
 all: intel-cpu arm-cpu
 
 arm-cpu:
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 	$(CARM) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o arm/testStandardIfTree
 	$(CARM) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o arm/testOptimizedIfTree
 	$(CARM) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o arm/testStandardNativeTree
 	$(CARM) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o arm/testOptimizedNativeTree
 
-<<<<<<< HEAD
-intel:
-=======
 intel-cpu:
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 	$(CINTEL) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o intel/testStandardIfTree
 	$(CINTEL) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o intel/testOptimizedIfTree
 	$(CINTEL) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o intel/testStandardNativeTree
