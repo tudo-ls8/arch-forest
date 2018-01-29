@@ -35,4 +35,7 @@ data/yelp/dataset
 data/yelp/yelp_dataset.tar
 data/yelp/results.csv
 
+data/synthetic-chain/text
+data/synthetic-chain/cpp
+
 data/**/*.txt
