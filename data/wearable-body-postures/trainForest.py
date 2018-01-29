@@ -92,8 +92,4 @@ def main(argv):
 		print(str(len(X)) + "\t" + str(len(X[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
 		
 if __name__ == "__main__":
-<<<<<<< HEAD
    main(sys.argv[1:])
-=======
-   main(sys.argv[1:])
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8

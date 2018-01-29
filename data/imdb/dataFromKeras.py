@@ -58,11 +58,7 @@ with open("train.csv",'w') as train_file:
 		line += "\n"
 		train_file.write(line)
 
-<<<<<<< HEAD
 with open("test.csv",'w') as test_file:
-=======
-with open("text/test.csv",'w') as test_file:
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 	for x,y in zip(XTest, YTest):
 		line = str(y)
 		for xi in x:

@@ -70,11 +70,7 @@ def main(argv):
 			outFile.write(forest.str())
 
 		with open("text/forest_"+str(ntree)+"_test.csv", 'w') as outFile:
-<<<<<<< HEAD
 			for x,y in zip(XTest, YTest):
-=======
-			for x,y in zip(XTest[0:5000], YTest[0:5000]):
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 				line = str(y)
 				for xi in x:
 					line += "," + str(xi)
