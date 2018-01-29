@@ -18,23 +18,14 @@ def main(argv):
 	outPath = "./text"
 
 	print("Loading data")
-<<<<<<< HEAD
 	#NROWS = 500000
 	data = np.genfromtxt("SUSY.csv", delimiter=',')#, max_rows=NROWS)
-=======
-	NROWS = 500000
-	data = np.genfromtxt("SUSY.csv", delimiter=',', max_rows=NROWS)
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 	X = data[:,1:]
 	Y = data[:,0]
 
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 
-<<<<<<< HEAD
 	NTrees = [1,50]
-=======
-	NTrees = [1,20]
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")
@@ -57,11 +48,7 @@ def main(argv):
 			outFile.write(forest.str())
 
 		with open("text/forest_"+str(ntree)+"_test.csv", 'w') as outFile:
-<<<<<<< HEAD
 			for x,y in zip(XTest, YTest):
-=======
-			for x,y in zip(XTest[0:500000], YTest[0:500000]):
->>>>>>> 3df02548914e5b679979f479fd0e24b66b2f8ba8
 				line = str(y)
 				for xi in x:
 					line += "," + str(xi)
