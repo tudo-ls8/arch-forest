@@ -17,6 +17,9 @@ import timeit
 
 sys.path.append('../code/python')
 
+import sys
+sys.setrecursionlimit(20000)
+
 from RandomForest import RandomForest
 from ForestConverter import *
 from NativeTreeConverter import *

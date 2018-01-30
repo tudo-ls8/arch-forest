@@ -56,7 +56,8 @@ def main(argv):
 
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
-
+		
+		os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
 		print(str(len(XTrain)) + "\t" + str(len(XTrain[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))

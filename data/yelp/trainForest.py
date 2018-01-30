@@ -46,35 +46,40 @@ def main(argv):
 
 	print("Data shape:",X.shape)
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
+	# NOTE: WE take a sample here which can be saved on the disk
+	indices = np.random.choice(range(XTest.shape[0]),size=25000)
+	XTest = XTest[0:25000].todense()
+	YTest = YTest[0:25000]
 
 	NTrees = [1,50]
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=8) 
 		print("Fitting model on " + str(XTrain.shape[0]) + " data points")
-		clf.fit(XTrain,YTrain)
+		#clf.fit(XTrain,YTrain)
 		
 		print("Testing model on " + str(XTest.shape[0]) + " data points")
 		start = timeit.default_timer()
-		YPredicted = clf.predict(XTest)
+		#YPredicted = clf.predict(XTest)
 		end = timeit.default_timer()
-		print("Confusion matrix:\n%s" % confusion_matrix(YTest, YPredicted))
-		print("Accuracy:%s" % accuracy_score(YTest, YPredicted))
+		#print("Confusion matrix:\n%s" % confusion_matrix(YTest, YPredicted))
+		#print("Accuracy:%s" % accuracy_score(YTest, YPredicted))
 		print("Total time: " + str(end - start) + " ms")
 		print("Throughput: " + str(XTest.shape[0] / (float(end - start)*1000)) + " #elem/ms")
 
-		print("Saving model to JSON on disk")
-		forest = RandomForest.RandomForestClassifier(None)
-		forest.fromSKLearn(clf)
+		#print("Saving model to JSON on disk")
+		#forest = RandomForest.RandomForestClassifier(None)
+		#forest.fromSKLearn(clf)
 
-		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
-			outFile.write(forest.str())
+		#with open("text/forest_"+str(ntree)+".json",'w') as outFile:
+		#	outFile.write(forest.str())
 
 		with open("text/forest_"+str(ntree)+"_test.csv", 'w') as outFile:
 			for x,y in zip(XTest, YTest):
 				line = str(y)
-				for xi in x:
+				print("x=",x[0][0][0][0])
+				print("x.s=",x.shape)
+				for xi in x[0][0]:
 					line += "," + str(xi)
-
 				outFile.write(line + "\n")
 
 		print("*** Summary ***")
