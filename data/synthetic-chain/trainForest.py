@@ -200,7 +200,7 @@ def main(argv):
 	# The dimension of the feature vector (=length of the feature vectors)
 	#dim = 10
 	# Number of training data to be generated
-	N = 1000
+	N = 10000
 
 	probs = [0.6,0.7,0.8,0.9,0.95,0.99]
 	sizes = [5,10,15,20,25,30,35,40,45,50]

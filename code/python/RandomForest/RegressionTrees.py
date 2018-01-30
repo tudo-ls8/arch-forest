@@ -61,7 +61,7 @@ class ExtraRegressionTree(RegressionTree):
 		return left,right,score
 
 	def generateSplit(self,f,indices):
-		node = Node()
+		node = Node.Node()
 		if self.isCategorical[f]:
 			categories = set()
 			for x in self.X:
@@ -81,6 +81,67 @@ class ExtraRegressionTree(RegressionTree):
 				return None
 
 			node.split = random.uniform(lower,upper)
+			node.feature = f
+			node.isCategorical = False
+			node.leftChild = None
+			node.rightChild = None
+			node.prediction = None
+		return node
+
+class GradientRegressionTree(RegressionTree):
+	def __init__(self, min_splits=2):
+		 super().__init__(min_splits)
+		 self.losses = {}
+
+	def scoreSplit(self,indices,node):
+		# Variance Score
+		left = []
+		right = []
+		for i in indices:
+			if node.predict(self.X[i]):
+				left.append(i)
+			else:
+				right.append(i)
+
+		score = 1.0 / self.losses[node.feature]
+		
+		return left,right,score
+
+	def generateSplit(self,f,indices):
+		node = Node.Node()
+		if self.isCategorical[f]:
+			raise NotImplementedError("To be done")
+		else:
+			l = 0
+			u = 1
+			s = 0.5
+			mu = 0.02
+			NSteps = 10
+			avgLoss = 0
+			#print("Feature f:", f)
+			for i in range(NSteps):
+				j = np.random.choice(indices)
+				x = self.X[j]
+				y = self.Y[j]
+				pred = l+u/(1+np.exp(-x[f]+s))
+				loss = (pred - y)*(pred - y)
+				#print("\tpred =", pred)
+				#print("\tloss =", loss)
+
+				avgLoss += loss
+
+				# Perform SGD
+				l = l - mu*2*(pred - loss)
+				u = u - mu*2*(pred - loss)*(1/(1+np.exp(-x[f]+s)))
+				s = s - mu*2*(pred - loss)*(pred)*(1-pred)
+				#print("\tl =",l)
+				#print("\tu =",u)
+				#print("\ts =",s)
+				#print("---\n")
+
+			#print("avgLoss=",avgLoss)
+			self.losses[f] = avgLoss
+			node.split = s
 			node.feature = f
 			node.isCategorical = False
 			node.leftChild = None

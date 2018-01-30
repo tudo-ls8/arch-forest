@@ -72,9 +72,6 @@ def main(argv):
 		print("\tX-Val run", cnt)
 		myForest = MyRandomForestClassifier(10)
 		skForest = RandomForestClassifier(n_estimators=10,bootstrap=False)
-
-		myForest = RandomForest.RandomForestRegressor(10)
-		skForest = ExtraTreesRegressor(n_estimators=20,n_jobs=4,bootstrap=False)
 		tmpForest = MyRandomForestRegressor(10)
 
 		print("\tFit on", len(train), " examples")			

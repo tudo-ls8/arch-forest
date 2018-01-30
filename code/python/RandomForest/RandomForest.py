@@ -8,19 +8,21 @@ from sklearn.tree import _tree
 import numpy as np
 
 from .ClassificationTrees import ArchTree
-from RandomForest.RegressionTrees import ExtraRegressionTree
+from .RegressionTrees import ExtraRegressionTree
+from .RegressionTrees import GradientRegressionTree
 
 from .Forest import Forest
 
 class RandomForest(Forest):
-	def __init__(self, numTrees, bootstrap_sample = False, min_splits = 2):
+	def __init__(self, numTrees = 1, basetype = "Extra", bootstrap_sample = False, min_splits = 2):
 		super().__init__()
 		self.numTrees = numTrees
+		self.basetype = basetype
 		self.bootstrap_sample = bootstrap_sample
 		self.min_splits = min_splits
 
 	def _fit(self,indices):
-		tree = self.generateTree(self.min_splits)
+		tree = self.generateTree()
 		tree.fit(self.X[indices],self.Y[indices])
 		return tree
 
@@ -35,15 +37,28 @@ class RandomForest(Forest):
 				indices.append([i for i in range(len(X))])
 
 		# do the actual training
-		pool = Pool(4) 
+		pool = Pool(1) # TODO: DO MORE HERE LATER
 		self.trees = pool.map(self._fit, indices)
 
 	def predict(self,X):
 		raise NotImplementedError("This function should not be called directly, but only by a sub-class")
+	
+	def generateTree(self):
+		raise NotImplementedError("This function should not be called directly, but only by a sub-class")
 
 class RandomForestClassifier(RandomForest):
+	def __init__(self, numTrees = 1, basetype = "Arch", bootstrap_sample = False, min_splits = 2):
+		super().__init__()
+		self.numTrees = numTrees
+		self.basetype = basetype
+		self.bootstrap_sample = bootstrap_sample
+		self.min_splits = min_splits
+
 	def generateTree(self):
-		return ExtraRegressionTree(self.min_splits)
+		if self.basetype == "Arch":
+			return ArchTree(self.min_splits)
+		else:
+			raise NotImplementedError("Could not found given tree class")
 
 	def predict(self,X):
 		YPred = []
@@ -60,8 +75,18 @@ class RandomForestClassifier(RandomForest):
 		return YPred
 
 class RandomForestRegressor(RandomForest):
+	def __init__(self, numTrees = 1, basetype = "Extra", bootstrap_sample = False, min_splits = 2):
+		super().__init__(numTrees, basetype, bootstrap_sample, min_splits)
+
 	def generateTree(self):
-		return ArchTree(self.min_splits)
+		if self.basetype == "Extra":
+			return ExtraRegressionTree(self.min_splits)
+		elif self.basetype == "SGD":
+			# TODO Ignore min_splits
+			return GradientRegressionTree(self.min_splits)
+		else:
+			raise NotImplementedError("Could not found given tree class")
+		
 
 	def predict(self,X):
 		YPred = []

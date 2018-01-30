@@ -30,7 +30,7 @@ class ClassificationTree(Tree):
 
 class ArchTree(ClassificationTree):
 	def __init__(self,min_splits):
-		self.min_splits = min_splits
+		super().__init__(min_splits)
 
 	def scoreSplit(self,indices,node):
 		left = []

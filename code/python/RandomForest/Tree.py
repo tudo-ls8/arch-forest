@@ -28,7 +28,7 @@ class Tree():
 
 	def generateNode(self,indices):
 		if len(set(self.Y[indices])) == 1 or len(indices) < self.min_splits:
-			node = Node()
+			node = Node.Node()
 			node.prediction = self.generatePrediction(indices)
 			return [],[],node
 		else:
@@ -53,7 +53,9 @@ class Tree():
 				return [],[],node
 			else:
 				bestNode = scores.index(max(scores))
-
+				print("best score:", max(scores))
+				print("len(left):", len(datasplits[bestNode][0]))
+				print("len(right):", len(datasplits[bestNode][1]))
 				return datasplits[bestNode][0],datasplits[bestNode][1],nodes[bestNode]
 
 	def fit(self,X,Y):
