@@ -34,6 +34,7 @@ testCodeTemplate = """#include <iostream>
 #include <cmath>
 #include <cassert>
 #include <tuple>
+#include <chrono>
 
 {headers}
 
@@ -103,7 +104,7 @@ measurmentCodeTemplate = """
 		}
 	}
 
-	std::vector<std::chrono::milliseconds> runtimes;
+	std::vector<float> runtimes;
 	std::vector<unsigned int> accuracies;
 	for (unsigned int i = 0; i < {num_repetitions}; ++i) {
 		unsigned int acc = 0;
@@ -115,7 +116,7 @@ measurmentCodeTemplate = """
     	auto end = std::chrono::high_resolution_clock::now();
     	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-		runtimes.push_back((float) (duration.count() / {N}));
+		runtimes.push_back((float) (duration.count() / {N}.0f));
 	}
 
 	// Something close to welfords algorithm to estimate variance and mean on the fly
@@ -131,8 +132,6 @@ measurmentCodeTemplate = """
 	}
 
 	std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
-		}
-	}
 
 """
 
