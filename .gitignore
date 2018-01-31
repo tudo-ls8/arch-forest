@@ -2,12 +2,14 @@ __pycache__
 
 data/trec/text
 data/trec/cpp
+data/trec/test.csv
 data/trec/trec07p/
 data/trec/trec07p.tgz
 
 data/covertype/covtype.data
 data/covertype/text
 data/covertype/cpp
+data/covertype/test.csv
 
 data/fact/gamma_simulations_facttools_dl2.csv
 data/fact/proton_simulations_facttools_dl2.csv
@@ -15,6 +17,7 @@ data/fact/results.csv
 data/fact/fact_data.tar.gz
 data/fact/text
 data/fact/cpp
+data/fact/test.csv
 
 data/imdb/train.csv
 data/imdb/results.csv
@@ -29,23 +32,28 @@ data/PAMAP2/results.csv
 data/PAMAP2/PAMAP2_Dataset.zip
 data/PAMAP2/cpp
 data/PAMAP2/text
+data/PAMAP2/test.csv
 
 data/susy/SUSY.csv
 data/susy/results.csv
 data/susy/susy.tar.gz
 data/susy/text
 data/susy/cpp
+data/susy/test.csv
 
 data/wearable-body-postures/dataset-har-PUC-Rio-ugulino.csv
 data/wearable-body-postures/results.csv
 data/wearable-body-postures/text
 data/wearable-body-postures/cpp
+data/wearable-body-postures/test.csv
 
 data/yelp/dataset
 data/yelp/yelp_dataset.tar
 data/yelp/results.csv
+data/yelp/test.csv
 
 data/synthetic-chain/text
 data/synthetic-chain/cpp
+data/synthetic-chain/*.csv
 
 data/**/*.txt

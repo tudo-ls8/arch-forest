@@ -54,6 +54,9 @@ def main(argv):
 		forest = RandomForest.RandomForestClassifier(None)
 		forest.fromSKLearn(clf)
 
+		if not os.path.exists("text"):
+			os.makedirs("text")
+		
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
 		

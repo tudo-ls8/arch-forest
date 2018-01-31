@@ -58,6 +58,15 @@ def main(argv):
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 	
 	NTrees = [1,25]
+
+	with open("test.csv", 'w') as outFile:
+		for x,y in zip(XTest, YTest):
+			line = str(y)
+			for xi in x:
+				line += "," + str(xi)
+
+			outFile.write(line + "\n")
+
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")
@@ -76,16 +85,11 @@ def main(argv):
 		forest = RandomForest.RandomForestClassifier(None)
 		forest.fromSKLearn(clf)
 
+		if not os.path.exists("text"):
+			os.makedirs("text")
+
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
-
-		with open("text/forest_"+str(ntree)+"_test.csv", 'w') as outFile:
-			for x,y in zip(XTest, YTest):
-				line = str(y)
-				for xi in x:
-					line += "," + str(xi)
-
-				outFile.write(line + "\n")
 
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")

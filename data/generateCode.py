@@ -157,9 +157,9 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 							   .replace("{feature_t}", str(featureType)) \
 							   .replace("{N}", str(N)) \
 							   .replace("{DIM}", str(dim)) \
-							   .replace("{test_file}", "../" + str(testFile)) 
+							   .replace("{test_file}", testFile) 
 
-	with open(outPath + "/test" + namespace + ".cpp",'w') as code_file:
+	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
 
 def generateClassifier(outPath, X, Y, converter, namespace, featureType, forest, testFile, reps):
@@ -172,8 +172,8 @@ def generateClassifier(outPath, X, Y, converter, namespace, featureType, forest,
 
 	headerCode, cppCode = converter.getCode(forest,numClasses)
 	cppCode = "#include \"" + namespace + ".h\"\n" + cppCode
-	writeFiles(outPath + "/", namespace, headerCode, cppCode)
-	writeTestFiles(outPath, namespace, namespace + ".h", len(X[0]), len(Y), featureType, testFile, targetAcc, reps)
+	writeFiles(outPath, namespace, headerCode, cppCode)
+	writeTestFiles(outPath+"test", namespace, namespace + ".h", len(X[0]), len(Y), featureType, testFile, targetAcc, reps)
 
 def getFeatureType(X):
 	containsFloat = False
@@ -213,27 +213,50 @@ def main(argv):
 	else:
 		basepath = argv[0].strip("/")
 
-	if len(argv)>1:
-		reps = argv[1]
+	if len(argv) < 2:
+		print("Please give a target architecture (arm or intel)")
+		return
 	else:
+		target = argv[1]
+
+		if (target != "intel" and target != "arm"):
+			print("Did not recognize architecture, ", target)
+			print("Please use arm or intel")
+			return
+		else:
+			if target == "intel":
+				setSize = 6
+			else:
+				setSize = 3
+
+	if len(argv) < 3:
 		reps = 10
+	else:
+		reps = argv[2]
+
+	if not os.path.exists(basepath + "/cpp"):
+		os.makedirs(basepath + "/cpp")
+
+	if not os.path.exists(basepath + "/cpp/" + target):
+		os.makedirs(basepath + "/cpp/" + target)
 
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith(".json"): 
 			name = f.replace(".json","")
-			dirpath = basepath + "/cpp/" + name + "/"
-			if not os.path.exists(dirpath):
-				os.makedirs(dirpath)
+			cppPath = basepath + "/cpp/" + target + "/" + name
+			print("Generating", cppPath)
+
+			if not os.path.exists(cppPath):
+				os.makedirs(cppPath)
 			
-			testname = "/text/" + name + "_test.csv"
-			#testdata = basepath + 
+			testname = "../../../test.csv" 
 			forestPath = basepath + "/text/" + f
 
 			loadedForest = RandomForest.RandomForestClassifier(None)
 			loadedForest.fromJSON(forestPath) 
 			#turnPoint = int(argv[0])
 
-			data = np.genfromtxt(basepath + testname, delimiter = ",")
+			data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
 
 			X = data[:,1:]
 			Y = data[:,0]
@@ -242,44 +265,42 @@ def main(argv):
 			dim = len(X[0])
 			numTest = len(X)
 
-			#print("Generating If-Tree")
+			print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "StandardIfTree", featureType, loadedForest, "../../" + testname, reps)
+			generateClassifier(cppPath + "/", X, Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "OptimizedIfTree", featureType, loadedForest, "../../" + testname, reps)
+			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, setSize))
+			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
 
-			#print("Generating NativeTree")
+			print("\tGenerating NativeTrees")
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "StandardNativeTree", featureType, loadedForest, "../../" + testname, reps)
+			generateClassifier(cppPath + "/", X, Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
 
-			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType))
-			generateClassifier(dirpath, X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, "../../" + testname, reps)
+			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
+			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
 			#print("Generating MixTree")
 			#converter = MixConverter(dim, "MixTree", featureType, turnPoint)
 			#generateClassifier(dirpath, X, Y, converter, "MixTree", featureType, tree, testdata)
 			#$(CXX) $(FLAGS) MixTree.h MixTree.cpp testMixTree.cpp -o testMixTree
 
-			Makefile = """CINTEL = g++
-CARM = arm-linux-gnueabihf-g++ 
+			if target == "intel":
+				compiler = "g++"
+			else:
+				compiler = "arm-linux-gnueabihf-g++"
+
+			Makefile = """COMPILER = {compiler}
 FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
-all: intel-cpu arm-cpu
+all: 
+	$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree
+	$(COMPILER) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o testOptimizedIfTree
+	$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree
+	$(COMPILER) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o testOptimizedNativeTree
+			""".replace("{compiler}", compiler)
 
-arm-cpu:
-	$(CARM) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o arm/testStandardIfTree
-	$(CARM) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o arm/testOptimizedIfTree
-	$(CARM) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o arm/testStandardNativeTree
-	$(CARM) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o arm/testOptimizedNativeTree
-
-intel-cpu:
-	$(CINTEL) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o intel/testStandardIfTree
-	$(CINTEL) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o intel/testOptimizedIfTree
-	$(CINTEL) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o intel/testStandardNativeTree
-	$(CINTEL) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o intel/testOptimizedNativeTree
-			"""
-			with open(dirpath + "/" + "Makefile",'w') as code_file:
+			with open(cppPath + "/" + "Makefile",'w') as code_file:
 				code_file.write(Makefile)
+		print("")
 
 if __name__ == "__main__":
    main(sys.argv[1:])

@@ -48,6 +48,13 @@ def main(argv):
 
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 
+	with open("test.csv") as outFile:
+		for i in range(XTest.shape[0]):
+	 		line = str(YTest[i])
+	 		for j in range(XTest.shape[1]):
+	 			line += "," + str(XTest[i,j])
+	 		outFile.write(line + "\n")
+
 	NTrees = [1,25]
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=8) 
@@ -66,17 +73,13 @@ def main(argv):
 		print("Saving model to JSON on disk")
 		forest = RandomForest.RandomForestClassifier()
 		forest.fromSKLearn(clf)
+		
+		if not os.path.exists("text"):
+			os.makedirs("text")
 
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
 		
-		with open("text/forest_"+str(ntree)+"_test.csv", 'w') as outFile:
-			for i in range(XTest.shape[0]):
-		 		line = str(YTest[i])
-		 		for j in range(XTest.shape[1]):
-		 			line += "," + str(XTest[i,j])
-		 		outFile.write(line + "\n")	
-
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
 		print(str(XTest.shape[0]) + "\t" + str(XTest.shape[1]) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
