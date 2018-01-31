@@ -40,9 +40,10 @@ def main(argv):
 
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 	
-	NTrees = [1,50]
+	NTrees = [1,25]
 	for ntree in NTrees:
-		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
+		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4,max_leaf_nodes 
+= 2**16) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")
 		clf.fit(XTrain,YTrain)
 		

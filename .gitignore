@@ -1,11 +1,13 @@
 __pycache__
 
 data/trec/text
+data/trec/cpp
 data/trec/trec07p/
 data/trec/trec07p.tgz
 
 data/covertype/covtype.data
 data/covertype/text
+data/covertype/cpp
 
 data/fact/gamma_simulations_facttools_dl2.csv
 data/fact/proton_simulations_facttools_dl2.csv
