@@ -27,7 +27,7 @@ class StandardIFTreeConverter(TreeConverter):
         code = ""
         tabs = "".join(['\t' for i in range(level)])
 
-        if head.prediction is not None:    
+        if head.prediction is not None:
             return tabs + "return " + str(int(head.prediction)) + ";\n" ;
         else:
                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
@@ -74,7 +74,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         super().__init__(dim, namespace, featureType)
         self.setSize = setSize
 
-    def getImplementation(self, treeID, head, level = 1):
+    def getImplementation(self, treeID, head, kernel, level = 1):
         # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
 
         """ Generate the actual if-else implementation for a given node
@@ -95,25 +95,50 @@ class OptimizedIFTreeConverter(TreeConverter):
                                         .replace("{namespace}", self.namespace) \
                                         .replace("{feature_t}", featureType)
         code = ""
+        labels = "{\n"
         tabs = "".join(['\t' for i in range(level)])
 
         # khchen: swap-algorithm
         if head.prediction is not None:
-                return tabs + "return " + str(int(head.prediction)) + ";\n" ;
+                return tabs + "return " + str(int(head.prediction)) + ";\n"
         else:
-                if head.probLeft >= head.probRight:
-                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
-                        code += self.getImplementation(treeID, head.leftChild, level + 1)
-                        code += tabs + "} else {\n"
-                        code += self.getImplementation(treeID, head.rightChild, level + 1)
-                        code += tabs + "}\n"
+                # it is already in labels, the rest is all in labels:
+                if kernel is False:
+                    labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                    labels += self.getImplementation(treeID, head.leftChild, False, level + 1)
+                    labels += tabs + "} else {\n"
+                    labels += self.getImplementation(treeID, head.rightChild, False, level + 1)
+                    labels += tabs + "}\n"
                 else:
-                        code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
-                        code += self.getImplementation(treeID, head.rightChild, level + 1)
-                        code += tabs + "} else {\n"
-                        code += self.getImplementation(treeID, head.leftChild, level + 1)
+                    # check if it is the moment to go out the kernel
+                    if curSize + function(head) >= budget:
+                        code += tabs + '\t' + "goto Label"+ str(which label) + ";\n"
+                        labels += "Label"+str(which label)+":\n"
+                        if head.probLeft >= head.probRight:
+                            labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                            code, labels += self.getImplementation(treeID, head.leftChild, False, level + 1)
+                            labels += tabs + "} else {\n"
+                            code, labels += self.getImplementation(treeID, head.rightChild, False, level + 1)
+                        else:
+                            labels += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                            code, labels += self.getImplementation(treeID, head.rightChild, False, level + 1)
+                            labels += tabs + "} else {\n"
+                            code, labels += self.getImplementation(treeID, head.leftChild, False, level + 1)
+                        labels += tabs + "}\n"
+                        labels += "}\n"
+                    else:
+                        if head.probLeft >= head.probRight:
+                                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                                code, labels += self.getImplementation(treeID, head.leftChild, True, level + 1)
+                                code += tabs + "} else {\n"
+                                code, labels += self.getImplementation(treeID, head.rightChild, True, level + 1)
+                        else:
+                                code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                                code, labels += self.getImplementation(treeID, head.rightChild, True, level + 1)
+                                code += tabs + "} else {\n"
+                                code, labels += self.getImplementation(treeID, head.leftChild, True, level + 1)
                         code += tabs + "}\n"
-        return code
+        return code, labels
 
     def getCode(self, tree, treeID):
         """ Generate the actual if-else implementation for a given tree
@@ -133,7 +158,9 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
 
-        cppCode += self.getImplementation(treeID, tree.head)
+        mainCode, labelsCode = self.getImplementation(treeID, tree.head, True)
+        cppCode += mainCode
+        cppCode += labelsCode
         cppCode += "}\n"
 
         headerCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \

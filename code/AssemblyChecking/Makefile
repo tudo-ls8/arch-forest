@@ -1,5 +1,5 @@
 CXX = g++
-FLAGS = -std=c++11 -Wall -O0 -funroll-loops -ftree-vectorize
+FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
 all:
 	$(CXX) $(FLAGS) NativeTree.h NativeTree.cpp testNativeTree.cpp -o testNativeTree
