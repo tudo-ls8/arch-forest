@@ -1,5 +1,22 @@
 __pycache__
 
+data/letter/letter-recognition.data
+data/letter/test.csv
+data/letter/text/
+
+data/magic/magic04.data
+data/magic/test.csv
+data/magic/text/
+
+data/spambase/spambase.data
+data/spambase/test.csv
+data/spambase/text/
+
+data/wine-quality/test.csv
+data/wine-quality/text/
+data/wine-quality/winequality-red.csv
+data/wine-quality/winequality-white.csv
+
 data/trec/text
 data/trec/cpp
 data/trec/test.csv
