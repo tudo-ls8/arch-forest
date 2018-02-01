@@ -131,8 +131,8 @@ measurmentCodeTemplate = """
 		var = var + delta*delta2;
 	}
 
-	std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
-
+	//std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
+	std :: cout << avg << "," << var / (cnt - 1) << std :: endl;
 """
 
 def writeFiles(basepath, basename, header, cpp):
