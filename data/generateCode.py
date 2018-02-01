@@ -249,15 +249,19 @@ def main(argv):
 			if not os.path.exists(cppPath):
 				os.makedirs(cppPath)
 			
-			testname = "../../../test.csv" 
 			forestPath = basepath + "/text/" + f
 
 			loadedForest = RandomForest.RandomForestClassifier(None)
 			loadedForest.fromJSON(forestPath) 
-			#turnPoint = int(argv[0])
 
-			data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
-
+			if basepath == "synthetic-chain":
+				testname = "../../../text/" + name + "_test.csv"
+				data = np.genfromtxt(basepath + "/text/" + name + "_test.csv", delimiter = ",")
+				reps = 100
+			else:
+				testname = "../../../test.csv" 
+				data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
+			
 			X = data[:,1:]
 			Y = data[:,0]
 

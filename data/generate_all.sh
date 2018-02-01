@@ -1,6 +1,9 @@
 #/bin/bash
 
 for d in ./*/; do
-	echo "Generating $d"
-	./generateCode.py $d
+	if ["$d" -ne "synthetic-chain"] 
+	then
+		echo "Generating $d"
+		./generateCode.py $d
+	fi
 done

@@ -161,7 +161,7 @@ def testTree(tree,XTest,YTest):
 	print("\tThroughput: " + str(len(YTest) / (float(end - start)*1000)) + " #elem/ms")	
 
 def trainTree(XTrain,YTrain):
-	NTree = 50
+	NTree = 25
 	#clf = DecisionTreeClassifier(max_features = None, max_depth = None,min_samples_split=2)
 	clf = RandomForestClassifier(NTree,max_features = None, max_depth = None,min_samples_split=2)
 
