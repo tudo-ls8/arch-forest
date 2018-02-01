@@ -223,13 +223,16 @@ def main(argv):
 			print("Did not recognize architecture, ", target)
 			print("Please use arm or intel")
 			return
-		else:
-			if target == "intel":
-				setSize = 6
-			else:
-				setSize = 3
 
 	if len(argv) < 3:
+		if target == "intel":
+			setSize = 6
+		else:
+			setSize = 3
+	else:
+		setSize = int(argv[2])
+
+	if len(argv) < 4:
 		reps = 10
 	else:
 		reps = argv[2]
