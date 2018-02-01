@@ -233,7 +233,7 @@ def main(argv):
 		setSize = int(argv[2])
 
 	if len(argv) < 4:
-		reps = 10
+		reps = 20
 	else:
 		reps = argv[2]
 
@@ -260,8 +260,10 @@ def main(argv):
 			if basepath == "synthetic-chain":
 				testname = "../../../text/" + name + "_test.csv"
 				data = np.genfromtxt(basepath + "/text/" + name + "_test.csv", delimiter = ",")
-				reps = 100
+				reps = 500
 			else:
+				if basepath == "wearable-body-postures":
+					reps = 300
 				testname = "../../../test.csv" 
 				data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
 			
