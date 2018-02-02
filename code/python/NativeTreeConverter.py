@@ -6,24 +6,6 @@ class NativeTreeConverter(TreeConverter):
     def __init__(self, dim, namespace, featureType):
         super().__init__(dim, namespace, featureType)
 
-    def containsFloat(self,tree):
-        for key in tree.nodes:
-            if (isinstance(tree.nodes[key].split, float)):
-                return True
-
-        return False
-
-    def getSplitRange(self,tree):
-        splits = []
-        for key in tree.nodes:
-            if tree.nodes[key].prediction is None:
-                splits.append(tree.nodes[key].split)
-
-        if len(splits) == 0:
-            return 0,0
-        else:
-            return min(splits), max(splits)
-
     def getArrayLenType(self, arrLen):
             arrayLenBit = int(np.log2(arrLen)) + 1
             if arrayLenBit <= 8:

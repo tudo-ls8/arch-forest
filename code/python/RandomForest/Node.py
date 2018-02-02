@@ -99,7 +99,10 @@ class Node:
 			self.probRight = float(json["probRight"])
 			self.isCategorical = (json["isCategorical"] == "True")
 			self.feature = int(json["feature"])
-			self.split = float(json["split"])
+			try:
+				self.split = int(json["split"])
+			except ValueError:	
+				self.split = float(json["split"])
 			self.rightChild = json["rightChild"]["id"]
 			self.leftChild = json["leftChild"]["id"]
 
