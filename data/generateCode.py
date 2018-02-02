@@ -226,9 +226,9 @@ def main(argv):
 
 	if len(argv) < 3:
 		if target == "intel":
-			setSize = 6
+			setSize = 10
 		else:
-			setSize = 3
+			setSize = 8
 	else:
 		setSize = int(argv[2])
 

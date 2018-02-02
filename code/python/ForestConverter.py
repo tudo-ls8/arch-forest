@@ -8,6 +8,24 @@ class TreeConverter:
 		self.namespace = namespace
 		self.featureType = featureType
 
+	def containsFloat(self,tree):
+		for key in tree.nodes:
+			if (isinstance(tree.nodes[key].split, float)):
+				return True
+
+		return False
+
+	def getSplitRange(self,tree):
+		splits = []
+		for key in tree.nodes:
+			if tree.nodes[key].prediction is None:
+				splits.append(tree.nodes[key].split)
+
+		if len(splits) == 0:
+			return 0,0
+		else:
+			return min(splits), max(splits)
+
 	def getDim(self):
 		return self.dim
 
@@ -31,7 +49,7 @@ class ForestConverter:
 		""" Generate a new ForestConverter
 
 		Args:
-		    treeConverter: A tree converter
+			treeConverter: A tree converter
 		"""
 		assert(issubclass(type(treeConverter), TreeConverter))
 		self.treeConverter = treeConverter
@@ -40,11 +58,11 @@ class ForestConverter:
 		""" Generate the actual code for the given forest
 
 		Args:
-		    forest (TYPE): The forest object
+			forest (TYPE): The forest object
 
 		Returns:
-		    Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
-		    a *.h file and cppCode contains the code (=string) for a *.cpp file
+			Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
+			a *.h file and cppCode contains the code (=string) for a *.cpp file
 		"""
 		dim = self.treeConverter.getDim()
 		namespace = self.treeConverter.getNamespace()

@@ -16,6 +16,7 @@ fi
 #echo "$1/cpp/$2"
 
 for d in ./$1/cpp/$2/*/; do
+    echo $d
 	cd $d
 	measurments="$d,$(./testStandardIfTree),$(./testOptimizedIfTree),$(./testStandardNativeTree),$(./testOptimizedNativeTree)"
 	printf "$measurments \n"

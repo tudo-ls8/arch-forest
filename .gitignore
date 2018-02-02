@@ -3,17 +3,21 @@ __pycache__
 data/letter/letter-recognition.data
 data/letter/test.csv
 data/letter/text/
+data/letter/cpp/
 
 data/magic/magic04.data
 data/magic/test.csv
 data/magic/text/
+data/magic/cpp
 
 data/spambase/spambase.data
 data/spambase/test.csv
 data/spambase/text/
+data/spambase/cpp
 
 data/wine-quality/test.csv
 data/wine-quality/text/
+data/wine-quality/coo
 data/wine-quality/winequality-red.csv
 data/wine-quality/winequality-white.csv
 
