@@ -55,7 +55,7 @@ def main(argv):
 	 			line += "," + str(XTest[i,j])
 	 		outFile.write(line + "\n")
 
-	NTrees = [1,25]
+	NTrees = [25]
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=8) 
 		print("Fitting model on " + str(XTrain.shape[0]) + " data points")
@@ -72,7 +72,7 @@ def main(argv):
 
 		print("Saving model to JSON on disk")
 		forest = RandomForest.RandomForestClassifier()
-		forest.fromSKLearn(clf)
+		forest.fromSKLearn(clf, True)
 		
 		if not os.path.exists("text"):
 			os.makedirs("text")
