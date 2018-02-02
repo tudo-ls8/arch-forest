@@ -8,10 +8,10 @@ class Forest:
 	def __init__(self):
 		self.trees = []
 
-	def fromSKLearn(self,forest):
+	def fromSKLearn(self,forest,roundSplit = False):
 		for e in forest.estimators_:
 			tree = self.generateTree()
-			tree.fromSKLearn(e)
+			tree.fromSKLearn(e,roundSplit)
 		
 			self.trees.append(tree)
 		

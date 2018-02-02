@@ -17,7 +17,7 @@ data/spambase/cpp
 
 data/wine-quality/test.csv
 data/wine-quality/text/
-data/wine-quality/coo
+data/wine-quality/cpp
 data/wine-quality/winequality-red.csv
 data/wine-quality/winequality-white.csv
 

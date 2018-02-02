@@ -56,7 +56,7 @@ class Node:
 	def __str__(self):
 		return str(self.id)
 
-	def fromSKLearn(self, tree, curNode, classes):
+	def fromSKLearn(self, tree, curNode, classes, roundSplit = False):
 		"""Generate a node from a sci-kit tree
 		
 		Args:
@@ -76,24 +76,27 @@ class Node:
 			else:
 				value = tree.value[curNode]
 			value = value / tree.weighted_n_node_samples[curNode]
-
 			self.prediction = classes[np.argmax(value)]
 		else:
 			self.feature = tree.feature[curNode]
-			self.split = float(tree.threshold[curNode])
+
+			if (roundSplit):
+				self.split = int(tree.threshold[curNode])
+			else:
+				self.split = float(tree.threshold[curNode])
+
 			self.isCategorical = False # Note: So far, sklearn does only support numrical features, see https://github.com/scikit-learn/scikit-learn/pull/4899
 			samplesLeft = float(tree.n_node_samples[tree.children_left[curNode]])
 			samplesRight = float(tree.n_node_samples[tree.children_right[curNode]])
 			self.probLeft = samplesLeft / self.numSamples
 			self.probRight = samplesRight / self.numSamples
 
-
 	def fromJSON(self, json):
 		self.id = json["id"]
 		self.numSamples = int(json["numSamples"])
 
 		if "prediction" in json:
-			self.prediction = (json["prediction"] == "True") or (json["prediction"] == "1.0")
+			self.prediction = float(json["prediction"])
 		else:
 			self.probLeft = float(json["probLeft"])
 			self.probRight = float(json["probRight"])

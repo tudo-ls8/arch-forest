@@ -21,9 +21,10 @@ def main(argv):
 	white = np.genfromtxt("winequality-white.csv", delimiter=';', skip_header=1)
 	X = np.vstack((red[:,:-1],white[:,:-1]))
 	Y = np.concatenate((red[:,-1], white[:,-1]))
-
+	# NOTE: It seems, that SKLEarn produces an internal mapping from 0-(|Y| - 1) for classification
+	# 		For some reason I was not able to extract this mapping from SKLearn ?!?!
+	Y = Y-min(Y)
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
-	
 
 	with open("test.csv", 'w') as outFile:
 		for x,y in zip(XTest, YTest):
@@ -33,7 +34,7 @@ def main(argv):
 
 			outFile.write(line + "\n")
 
-	NTrees = [1,25]
+	NTrees = [25]
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")

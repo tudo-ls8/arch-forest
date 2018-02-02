@@ -93,7 +93,7 @@ measurmentCodeTemplate = """
 	for (unsigned int i = 0; i < 2; ++i) {
 		unsigned int acc = 0;
 		for (unsigned int j = 0; j < {N}; ++j) {
-			bool pred = {namespace}_predict(&XTest[{DIM}*j]);
+			unsigned int pred = {namespace}_predict(&XTest[{DIM}*j]);
 			acc += (pred == YTest[j]);
 		}
 		if (acc != {target_acc}) {
@@ -110,7 +110,7 @@ measurmentCodeTemplate = """
 		unsigned int acc = 0;
     	auto start = std::chrono::high_resolution_clock::now();
 		for (unsigned int j = 0; j < {N}; ++j) {
-			bool pred = {namespace}_predict(&XTest[{DIM}*j]);
+			unsigned int pred = {namespace}_predict(&XTest[{DIM}*j]);
 			acc += (pred == YTest[j]);
 		}
     	auto end = std::chrono::high_resolution_clock::now();
