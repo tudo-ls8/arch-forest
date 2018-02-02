@@ -15,7 +15,7 @@ data = []
 for d in XTrain:
 	for index in d:
 		indices.append(index)
-		data.append(1.0/len(d))
+		data.append(len(d))
 	indptr.append(len(indices))
 XTrain = csr_matrix((data, indices, indptr), dtype=float).toarray()
 
@@ -25,7 +25,7 @@ data = []
 for d in XTest:
 	for index in d:
 		indices.append(index)
-		data.append(1.0/len(d))
+		data.append(len(d))
 	indptr.append(len(indices))
 XTest = csr_matrix((data, indices, indptr), dtype=float).toarray()
 

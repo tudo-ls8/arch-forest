@@ -48,14 +48,14 @@ def main(argv):
 
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 
-	with open("test.csv") as outFile:
+	with open("test.csv", 'w') as outFile:
 		for i in range(XTest.shape[0]):
 	 		line = str(YTest[i])
 	 		for j in range(XTest.shape[1]):
 	 			line += "," + str(XTest[i,j])
 	 		outFile.write(line + "\n")
 
-	NTrees = [1,25]
+	NTrees = [25]
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=8) 
 		print("Fitting model on " + str(XTrain.shape[0]) + " data points")

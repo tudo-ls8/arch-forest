@@ -258,6 +258,7 @@ def main(argv):
 			loadedForest.fromJSON(forestPath) 
 
 			if basepath == "synthetic-chain":
+				print(basepath+"/text/"+name+"_test.csv")
 				testname = "../../../text/" + name + "_test.csv"
 				data = np.genfromtxt(basepath + "/text/" + name + "_test.csv", delimiter = ",")
 				reps = 500

@@ -57,7 +57,7 @@ def main(argv):
 	X,Y = readFile(data)
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 	
-	NTrees = [1,25]
+	NTrees = [25]
 
 	with open("test.csv", 'w') as outFile:
 		for x,y in zip(XTest, YTest):
