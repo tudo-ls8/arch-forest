@@ -74,27 +74,63 @@ class OptimizedIFTreeConverter(TreeConverter):
         super().__init__(dim, namespace, featureType)
         self.setSize = setSize
 
-    def sizeOfSplit(self, node):
+    def sizeOfSplit(self, tree, node):
         size = 0
         if node.prediction is not None:
             raise IndexError('this node is not spilit')
         else:
+            if self.containsFloat(tree):
+                splitDataType = "float"
+            else:
+                splitDataType = "int"
+
             # In O0, the basic size of a split node is 4 instructions for loading.
             # Since a split node must contain a pair of if-else statements,
             # one instruction for branching is not avoidable.
-            size += 5
-            if node.leftChild.prediction is not None:
-                size += 2
-            if node.rightChild.prediction is not None:
-                size += 2
-            else:
-                # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                size += 1
-                # khchen:compilation should opt this with the else branch...
-        #print(size)
+            if splitDataType == "int" and setSize == "8":
+                # this is for arm int
+                size += 5
+                if node.leftChild.prediction is not None:
+                    size += 2
+                if node.rightChild.prediction is not None:
+                    size += 2
+                else:
+                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
+                    size += 1
+                    # khchen:compilation should opt this with the else branch...
+            elif splitDataType == "float" and setSize == "8":
+                # this is for arm float
+                size += 5
+                if node.leftChild.prediction is not None:
+                    size += 2
+                if node.rightChild.prediction is not None:
+                    size += 2
+                else:
+                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
+                    size += 1
+            elif splitDataType == "int" and setSize == "10":
+                # this is for intel integer
+                size += 5
+                if node.leftChild.prediction is not None:
+                    size += 2
+                if node.rightChild.prediction is not None:
+                    size += 2
+                else:
+                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
+                    size += 1
+            elif splitDataType == "float" and setSize == "10":
+                # this is for intel float
+                size += 5
+                if node.leftChild.prediction is not None:
+                    size += 2
+                if node.rightChild.prediction is not None:
+                    size += 2
+                else:
+                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
+                    size += 1
         return size
 
-    def getImplementation(self, treeID, head, kernel, inSize, inIdx, level = 1):
+    def getImplementation(self, tree, treeID, head, kernel, inSize, inIdx, level = 1):
         # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
 
         """ Generate the actual if-else implementation for a given node
@@ -149,9 +185,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
                 else:
                     # check if it is the moment to go out the kernel
-                    #print(curSize)
-                    #print(self.sizeOfSplit(head))
-                    if curSize + self.sizeOfSplit(head) >= budget:
+                    if curSize + self.sizeOfSplit(tree, head) >= budget:
                         labelIdx += 1
                         code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                         labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
@@ -186,7 +220,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                         labels += tabs + "}\n"
                         labels += "}\n"
                     else:
-                        curSize += self.sizeOfSplit(head)
+                        curSize += self.sizeOfSplit(tree,head)
                         if head.probLeft >= head.probRight:
                                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                                 tmpOut= self.getImplementation(treeID, head.leftChild, True, curSize, labelIdx,level + 1)
@@ -235,7 +269,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{feature_t}", featureType)
 
         #mainCode, labelsCode, curSize, labelIdx
-        output = self.getImplementation(treeID, tree.head, True, 0, 0)
+        output = self.getImplementation(tree, treeID, tree.head, True, 0, 0)
         cppCode += output[0]
         cppCode += output[1]
         cppCode += "}\n"
