@@ -22,8 +22,6 @@ def readFile(path):
 		entries = row.strip().split(",")
 		x = [float(e) for e in entries[0:-1]]
 		
-		# Labels are capital letter has. 'A' starts in ASCII code with 65
-		# We map it to '1' here 
 		y = int(entries[-1])
 		X.append(x)
 		Y.append(y)

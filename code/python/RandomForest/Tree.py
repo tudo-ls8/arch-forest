@@ -136,10 +136,10 @@ class Tree():
 
 		return node
 
-	def fromSKLearn(self, tree):
-		self.head = self._fromSKLearn(tree.tree_, 0, tree.classes_)
+	def fromSKLearn(self, tree, roundSplit = False):
+		self.head = self._fromSKLearn(tree.tree_, 0, tree.classes_, roundSplit)
 
-	def _fromSKLearn(self, tree, curNode, classes):
+	def _fromSKLearn(self, tree, curNode, classes, roundSplit = False):
 		""" Loads a tree from sci-kit internal data structure into this object
 		
 		Args:
@@ -150,7 +150,7 @@ class Tree():
 		    TYPE: The root node of the extracted tree structure
 		"""
 		node = Node.Node()
-		node.fromSKLearn(tree, curNode, classes)
+		node.fromSKLearn(tree, curNode, classes, roundSplit)
 		node.id = len(self.nodes)
 		self.nodes[node.id] = node
 
@@ -158,8 +158,8 @@ class Tree():
 			leftChild = tree.children_left[curNode]
 			rightChild = tree.children_right[curNode]
 			
-			node.leftChild = self._fromSKLearn(tree, leftChild, classes)
-			node.rightChild = self._fromSKLearn(tree, rightChild, classes)
+			node.leftChild = self._fromSKLearn(tree, leftChild, classes, roundSplit)
+			node.rightChild = self._fromSKLearn(tree, rightChild, classes, roundSplit)
 
 		return node
 

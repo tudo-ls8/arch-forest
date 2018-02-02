@@ -25,10 +25,12 @@ def readFile(path):
 		entries = row.replace("\n","").split(",")
 
 		X.append([float(e) for e in entries[:-1]])
-		Y.append(float(entries[-1]))
+		Y.append(int(entries[-1]))
 
+	# NOTE: It seems, that SKLEarn produces an internal mapping from 0-(|Y| - 1) for classification
+	# 		For some reason I was not able to extract this mapping from SKLearn ?!?!
+	Y = Y-min(Y)
 	return np.array(X), np.array(Y)
-
 
 def main(argv):
 	X,Y = readFile("covtype.data")
@@ -65,7 +67,7 @@ def main(argv):
 
 		print("Saving model to JSON on disk")
 		forest = RandomForest.RandomForestClassifier(None)
-		forest.fromSKLearn(clf)
+		forest.fromSKLearn(clf, True)
 
 		if not os.path.exists("text"):
 			os.makedirs("text")

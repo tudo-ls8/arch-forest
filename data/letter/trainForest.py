@@ -22,8 +22,9 @@ def readFile(path):
 		entries = row.strip().split(",")
 		x = [int(e) for e in entries[1:]]
 		# Labels are capital letter has. 'A' starts in ASCII code with 65
-		# We map it to '1' here 
-		y = ord(entries[0]) - 64
+		# We map it to '0' here, since SKLearn internally starts with mapping = 0 
+		# and I have no idea how it produces correct outputs in the first place
+		y = ord(entries[0]) - 65
 		
 		X.append(x)
 		Y.append(y)
@@ -62,7 +63,7 @@ def main(argv):
 
 		print("Saving model to JSON on disk")
 		forest = RandomForest.RandomForestClassifier(None)
-		forest.fromSKLearn(clf)
+		forest.fromSKLearn(clf,True)
 
 		if not os.path.exists("text"):
 			os.makedirs("text")
