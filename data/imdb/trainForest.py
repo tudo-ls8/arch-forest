@@ -52,7 +52,7 @@ def main(argv):
 
 		print("Saving model to JSON on disk")
 		forest = RandomForest.RandomForestClassifier(None)
-		forest.fromSKLearn(clf)
+		forest.fromSKLearn(clf, True)
 
 		if not os.path.exists("text"):
 			os.makedirs("text")
