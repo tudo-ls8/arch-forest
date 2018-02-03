@@ -88,46 +88,46 @@ class OptimizedIFTreeConverter(TreeConverter):
             # Since a split node must contain a pair of if-else statements,
             # one instruction for branching is not avoidable.
             if splitDataType == "int" and setSize == "8":
-                # this is for arm int
-                size += 5
+                # this is for arm int (ins * bytes)
+                size += 5*4
                 if node.leftChild.prediction is not None:
-                    size += 2
+                    size += 2*4
                 if node.rightChild.prediction is not None:
-                    size += 2
+                    size += 2*4
                 else:
                     # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 1
+                    size += 1*4
                     # khchen:compilation should opt this with the else branch...
             elif splitDataType == "float" and setSize == "8":
                 # this is for arm float
-                size += 5
+                size += 8*4
                 if node.leftChild.prediction is not None:
-                    size += 2
+                    size += 2*4
                 if node.rightChild.prediction is not None:
-                    size += 2
+                    size += 2*4
                 else:
                     # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 1
+                    size += 1*4
             elif splitDataType == "int" and setSize == "10":
-                # this is for intel integer
-                size += 5
+                # this is for intel integer (bytes)
+                size += 28
                 if node.leftChild.prediction is not None:
-                    size += 2
+                    size += 10
                 if node.rightChild.prediction is not None:
-                    size += 2
+                    size += 10
                 else:
                     # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 1
+                    size += 5
             elif splitDataType == "float" and setSize == "10":
-                # this is for intel float
-                size += 5
+                # this is for intel float (bytes)
+                size += 17
                 if node.leftChild.prediction is not None:
-                    size += 2
+                    size += 10
                 if node.rightChild.prediction is not None:
-                    size += 2
+                    size += 10
                 else:
                     # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 1
+                    size += 5
         return size
 
     def getImplementation(self, tree, treeID, head, kernel, inSize, inIdx, level = 1):
@@ -154,7 +154,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-        budget = 512
+        budget = 32*500
         #print (inSize)
         #print (inIdx)
         curSize = inSize
