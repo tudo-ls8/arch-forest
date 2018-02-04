@@ -30,8 +30,10 @@ def readFile(path):
 
 	# NOTE: It seems, that SKLEarn produces an internal mapping from 0-(|Y| - 1) for classification
 	# 		For some reason I was not able to extract this mapping from SKLearn ?!?!
+	Y = np.array(Y)
+	X = np.array(X)
 	Y = Y-min(Y)
-	return np.array(X), np.array(Y)
+	return X,Y
 
 def main(argv):
 	X,Y = readFile("covtype.data")

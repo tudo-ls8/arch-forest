@@ -53,7 +53,7 @@ def main(argv):
 
 		print("Saving model to JSON on disk")
 		forest = RandomForest.RandomForestClassifier(None)
-		forest.fromSKLearn(clf)
+		forest.fromSKLearn(clf, True)
 
 		if not os.path.exists("text"):
 			os.makedirs("text")
@@ -64,7 +64,9 @@ def main(argv):
 		print("Saving model to PKL on disk")
 		joblib.dump(clf, filename+".pkl")
 
-		os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
+		if not os.path.islink("text/forest_"+str(ntree)+"_test.csv"):
+			os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
+
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
 		print(str(len(XTrain)) + "\t" + str(len(XTrain[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
