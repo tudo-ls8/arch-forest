@@ -133,16 +133,20 @@ class OptimizedIFTreeConverter(TreeConverter):
     def getImplementation(self, tree, treeID, head, kernel, inSize, inIdx, level = 1):
         # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
 
-        """ Generate the actual if-else implementation for a given node
+        """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
 
         Args:
+            tree : the body of this tree
             treeID (TYPE): The id of this tree (in case we are dealing with a forest)
             head (TYPE): The current node to generate an if-else structure for.
+            kernel (binary flag): Indicator for the case that the size of generated codes is greater than the cache.
+            inSize : Parameter for the intermediate size of the code size
+            inIdx : Parameter for the intermediate idx of the labels
             level (int, optional): The intendation level of the generated code for easier
                                                         reading of the generated code
 
         Returns:
-            String: The actual if-else code as a string
+            Tuple: The string of if-else code, the string of label if-else code, generated code size and Final label index
         """
         featureType = self.getFeatureType()
         headerCode = "unsigned int {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
@@ -185,7 +189,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
                 else:
                     # check if it is the moment to go out the kernel
-                    if curSize + self.sizeOfSplit(tree, head) >= budget:
+                    if curSize + self.sizeOfSplit(tree, head) > budget:
                         labelIdx += 1
                         code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                         labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
