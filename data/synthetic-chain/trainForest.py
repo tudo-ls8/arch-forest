@@ -16,6 +16,7 @@ from sklearn import tree
 from sklearn.tree import _tree
 import timeit
 from sklearn.ensemble import VotingClassifier
+from sklearn.externals import joblib
 
 sys.path.append('../../code/python')
 
@@ -222,6 +223,9 @@ def main(argv):
 
 			with open(filename + ".json",'w') as tree_file:
 				tree_file.write(tChain.str())
+			
+			print("Saving model to PKL on disk")
+			joblib.dump(skchain, filename+".pkl")
 
 			print("")
 	# print("### Generating very difficult training data ###")

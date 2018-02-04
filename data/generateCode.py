@@ -262,8 +262,8 @@ def main(argv):
 				data = np.genfromtxt(basepath + "/text/" + name + "_test.csv", delimiter = ",")
 				reps = 500
 			else:
-				if basepath == "wearable-body-postures":
-					reps = 300
+				# if basepath == "wearable-body-postures":
+				# 	reps = 300
 				testname = "../../../test.csv" 
 				data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
 			

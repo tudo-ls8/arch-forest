@@ -10,6 +10,7 @@ from sklearn import tree
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.externals import joblib
 
 sys.path.append('../../code/python')
 from RandomForest import RandomForest
@@ -65,7 +66,7 @@ def main(argv):
 
 			outFile.write(line + "\n")
 
-	NTrees = [1,25]
+	NTrees = [25]
 
 	for ntree in NTrees:
 		# We limit the overall size of the trees in the forest (but not its depth!), so that we can still generate and compile them in a reasonable time-frame (> 200mb cpp files take something around 2h for compilation. This gives a small performance penalty, but still a very good accuracy. 
@@ -100,6 +101,9 @@ def main(argv):
 
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
+
+		print("Saving model to PKL on disk")
+		joblib.dump(clf, "text/forest_"+str(ntree)+".pkl")
 
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")

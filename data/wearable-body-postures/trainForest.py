@@ -10,6 +10,7 @@ from sklearn import tree
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.externals import joblib
 
 sys.path.append('../../code/python')
 from RandomForest import RandomForest
@@ -57,7 +58,7 @@ def main(argv):
 	X,Y = readFile(data)
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 	
-	NTrees = [1,25]
+	NTrees = [25]
 
 	with open("test.csv", 'w') as outFile:
 		for x,y in zip(XTest, YTest):
@@ -90,6 +91,9 @@ def main(argv):
 
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
+		
+		print("Saving model to PKL on disk")
+		joblib.dump(clf, "text/forest_"+str(ntree)+".pkl")
 
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
