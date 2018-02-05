@@ -69,7 +69,7 @@ def main(argv):
 
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
-		print(str(len(XTrain)) + "\t" + str(len(XTrain[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
+		print(str(len(XTrain)+len(XTest)) + "\t" + str(len(XTrain[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
 
 if __name__ == "__main__":
    main(sys.argv[1:])
