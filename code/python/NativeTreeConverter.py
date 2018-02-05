@@ -63,18 +63,20 @@ class NativeTreeConverter(TreeConverter):
             else:
                 lower, upper = self.getSplitRange(tree)
 
+                bitUsed = 0
                 if lower > 0:
                     prefix = "unsigned"
                     maxVal = upper
+                    bitUsed = 1
                 else:
                     prefix = ""
                     maxVal = max(-lower, upper)
 
                 splitBit = int(np.log2(maxVal) + 1 if maxVal != 0 else 1)
 
-                if splitBit <= 8:
+                if splitBit <= (8-bitUsed):
                     splitDataType = prefix + " char"
-                elif splitBit <= 16:
+                elif splitBit <= (16-bitUsed):
                     splitDataType = prefix + " short"
                 else:
                     splitDataType = prefix + " int"

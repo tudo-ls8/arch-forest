@@ -15,6 +15,12 @@ data/spambase/test.csv
 data/spambase/text/
 data/spambase/cpp
 
+data/mnist/*ubyte
+data/mnist/*gz
+data/mnist/test.csv
+data/mnist/text/
+data/mnist/cpp
+
 data/wine-quality/test.csv
 data/wine-quality/text/
 data/wine-quality/cpp
