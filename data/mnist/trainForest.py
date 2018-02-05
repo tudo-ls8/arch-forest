@@ -15,40 +15,50 @@ from sklearn.externals import joblib
 sys.path.append('../../code/python')
 from RandomForest import RandomForest
 
-def readFile(XPath, YPath,N):
+def readFile(path):
 	X = []
 	Y = []
-	f = open(XPath, "rb")
-	l = open(YPath, "rb")
 
-	f.read(16)
-	l.read(8)
-	images = []
+	f = open(path,'r')
 
-	for i in range(N):
-		Y.append(ord(l.read(1)))
-		x = []
-		for j in range(28*28):
-			x.append(ord(f.read(1)))
-		X.append(X)
+	for row in f:
+		entries = row.strip("\n").split(",")
+		
+		Y.append(int(entries[0]))
+		x = [int(e) for e in entries[1:]]
+		X.append(x)
+
 	return np.array(X),np.array(Y)
+
+# def readFile(XPath, YPath,N):
+# 	X = []
+# 	Y = []
+# 	f = open(XPath, "rb")
+# 	l = open(YPath, "rb")
+
+# 	f.read(16)
+# 	l.read(8)
+# 	images = []
+
+# 	for i in range(N):
+# 		Y.append(ord(l.read(1)))
+# 		x = []
+# 		for j in range(28*28):
+# 			x.append(ord(f.read(1)))
+# 		X.append(X)
+# 	return np.array(X),np.array(Y)
 
 def main(argv):
 	outPath = "./text"
 
 	print("Reading train files")
-	XTrain,YTrain = readFile("train-images-idx3-ubyte", "train-labels-idx1-ubyte", 60000)
+	XTrain,YTrain = readFile("mnist_train.csv")
+	#XTrain,YTrain = readFile("train-images-idx3-ubyte", "train-labels-idx1-ubyte", 60000)
 	
 	print("Reading test files")
-	XTest,YTest = readFile("t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte", 10000)
-
-	with open("test.csv", 'w') as outFile:
-		for x,y in zip(XTest, YTest):
-			line = str(y)
-			for xi in x:
-				line += "," + str(xi)
-
-			outFile.write(line + "\n")
+	XTest,YTest = readFile("mnist_test.csv")
+	
+	#XTest,YTest = readFile("t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte", 10000)
 
 	NTrees = [25]
 	for ntree in NTrees:
@@ -80,7 +90,7 @@ def main(argv):
 
 		print("*** Summary ***")
 		print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
-		print(str(len(X)) + "\t" + str(len(X[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
+		print(str(len(XTrain)+len(XTest)) + "\t" + str(len(XTrain[0])) + "\t" + str(accuracy_score(YTest, YPredicted)) + "\t" + str(forest.getAvgDepth()))
 		
 if __name__ == "__main__":
    main(sys.argv[1:])

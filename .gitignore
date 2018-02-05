@@ -20,6 +20,8 @@ data/mnist/*gz
 data/mnist/test.csv
 data/mnist/text/
 data/mnist/cpp
+data/mnist/mnist_train.csv
+data/mnist/mnist_test.csv
 
 data/wine-quality/test.csv
 data/wine-quality/text/
