@@ -62,7 +62,7 @@ def main(argv):
 			outFile.write(forest.str())
 		
 		print("Saving model to PKL on disk")
-		joblib.dump(clf, filename+".pkl")
+		joblib.dump(clf, "text/forest_"+str(ntree)+".pkl")
 
 		if not os.path.islink("text/forest_"+str(ntree)+"_test.csv"):
 			os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
