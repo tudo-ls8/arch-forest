@@ -63,15 +63,23 @@ class RandomForestClassifier(RandomForest):
 	def predict(self,X):
 		YPred = []
 		for x in X:
-			classes = {}
+			predCnt = []
 			for t in self.trees:
 				ypred = t.predict([x])[0]
-				if ypred in classes:
-					classes[ypred] += 1
-				else:
-					classes[ypred] = 1
-			ypred = max(classes, key=classes.get)
-			YPred.append(ypred)
+				if len(predCnt) <= ypred:
+					predCnt = predCnt + [0 for i in range(int(ypred)-len(predCnt) + 1)]
+				predCnt[int(ypred)] += 1
+
+			pred = 0
+			cnt = predCnt[0]
+
+			for i in range(1,len(predCnt)):
+				if (predCnt[i] > cnt):
+					cnt = predCnt[i]
+					pred = i
+
+			YPred.append(float(pred))
+
 		return YPred
 
 class RandomForestRegressor(RandomForest):

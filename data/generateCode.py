@@ -165,6 +165,7 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 def generateClassifier(outPath, X, Y, converter, namespace, featureType, forest, testFile, reps):
 	YPredicted_ = forest.predict(X)
 	targetAcc = sum(YPredicted_ == Y)
+	print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
 
 	# TODO: STORE NUM OF CLASSES IN TREE / FOREST ???
 	# 		THIS IS ONLY NEEDED FOR CLASSIFICATION!
@@ -281,7 +282,7 @@ def main(argv):
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
 			generateClassifier(cppPath + "/", X, Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, setSize))
+			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
 			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating NativeTrees")

@@ -24,7 +24,8 @@ def readFile(path):
 	for row in f:
 		entries = row.strip("\n").split(",")
 		
-		Y.append(int(entries[0]))
+		# 
+		Y.append(int(entries[0])-1)
 		x = [int(e) for e in entries[1:]]
 		X.append(x)
 
@@ -86,7 +87,7 @@ def main(argv):
 			outFile.write(forest.str())
 
 		if not os.path.islink("text/forest_"+str(ntree)+"_test.csv"):
-                        os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
+			os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
 
 		print("Saving model to PKL on disk")
 		joblib.dump(clf, "text/forest_"+str(ntree)+".pkl") 
