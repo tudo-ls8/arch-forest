@@ -84,7 +84,7 @@ class OptimizedIFTreeConverter(TreeConverter):
     def pathSort(self, tree):
         self.inKernel = {}
 
-    def nodeSort(self, tree, treeID):
+    def nodeSort(self, tree):
         self.inKernel = {}
         curSize = 0
         L = []
@@ -304,7 +304,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
 
-        self.nodeSort(tree, treeID)
+        self.nodeSort(tree)
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
         cppCode += output[0] #code
         cppCode += output[1] #label

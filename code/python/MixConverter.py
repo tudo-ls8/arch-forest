@@ -27,7 +27,7 @@ class MixConverter(TreeConverter):
         def pathSort(self, tree):
             self.inKernel = {}
 
-        def nodeSort(self, tree, treeID):
+        def nodeSort(self, tree):
             self.inKernel = {}
             curSize = 0
             L = []
@@ -118,10 +118,13 @@ class MixConverter(TreeConverter):
 
             # khchen: swap-algorithm + kernel grouping
             if head.prediction is not None:
-                    if inKernel[head.id] is False:
+                    if self.inKernel[head.id] is False:
                         #it must be in Kernel, otherwise we are in trouble.
-                        raise NotImplementedError("This should don't happen!")
-                    return (tabs + "return " + str(int(head.prediction)) + ";\n" )
+                        code += tabs + '\t' + "subroot = "+str(mapping[head.id])+";\n"
+                        code += tabs + '\t' + "goto Label"+str(treeID)+";\n"
+
+                    else:
+                        return (tabs + "return " + str(int(head.prediction)) + ";\n" )
             else:
                     # check if it is the moment to go out the kernel, set up the root id then goto the end of the while loop.
                     if self.inKernel[head.id] is False:
@@ -132,14 +135,11 @@ class MixConverter(TreeConverter):
                         if head.probLeft >= head.probRight:
                                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                                 code += self.getIFImplementation(tree, treeID, head.leftChild,  mapping, level + 1)
-                                code += tmpOut[0]
                                 code += tabs + "} else {\n"
                                 code += self.getIFImplementation(tree, treeID, head.rightChild,  mapping, level + 1)
-                                code += tmpOut[0]
                         else:
                                 code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
                                 code += self.getIFImplementation(tree, treeID, head.rightChild,  mapping, level + 1)
-                                code += tmpOut[0]
                                 code += tabs + "} else {\n"
                                 code += self.getIFImplementation(tree, treeID, head.leftChild,  mapping, level + 1)
                         code += tabs + "}\n"
@@ -314,15 +314,15 @@ class MixConverter(TreeConverter):
                                     .replace("{namespace}", self.namespace) \
                                     .replace("{feature_t}", featureType)
             cppCode += "unsigned int subroot;\n"
-            nativeImplementation = self.getNativeImplementation(tree.head, treeID)
+            nativeImplementation = self.getNativeImplementation(tree.head, treeID) + "\n"
             cppCode += nativeImplementation[0]
             arrLen = nativeImplementation[1]
             mapping = nativeImplementation[2]
 
-            self.nodeSort(tree, treeID)
+            self.nodeSort(tree)
             ifImplementation = self.getIFImplementation(tree, treeID, tree.head, mapping, 0)
             # kernel code
-            cppCode += ifImplementation[0]
+            cppCode += ifImplementation
 
             # Data Array
             cppCode += """

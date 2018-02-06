@@ -279,18 +279,18 @@ def main(argv):
 			numTest = len(X)
 
 			print("\tGenerating If-Trees")
-			#converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			#generateClassifier(cppPath + "/", X, Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
+			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
+			generateClassifier(cppPath + "/", X, Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 
-			#converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
-			#generateClassifier(cppPath + "/", X, Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
+			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
+			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating NativeTrees")
-			#converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			#generateClassifier(cppPath + "/", X, Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
+			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
+			generateClassifier(cppPath + "/", X, Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
 
-			#converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
-			#generateClassifier(cppPath + "/", X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
+			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
+			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating MixTrees")
 			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
