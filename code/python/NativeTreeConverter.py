@@ -67,9 +67,9 @@ class NativeTreeConverter(TreeConverter):
                 if lower > 0:
                     prefix = "unsigned"
                     maxVal = upper
-                    bitUsed = 1
                 else:
                     prefix = ""
+                    bitUsed = 1
                     maxVal = max(-lower, upper)
 
                 splitBit = int(np.log2(maxVal) + 1 if maxVal != 0 else 1)

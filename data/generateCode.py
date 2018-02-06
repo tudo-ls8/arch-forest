@@ -188,18 +188,20 @@ def getFeatureType(X):
 	else:
 		lower = np.min(X)
 		upper = np.max(X)
+		bitUsed = 0
 		if lower > 0:
 			prefix = "unsigned"
 			maxVal = upper
 		else:
 			prefix = ""
+			bitUser = 1
 			maxVal = max(-lower, upper)
 
 		bit = int(np.log2(maxVal) + 1 if maxVal != 0 else 1)
 
-		if bit <= 8:
+		if bit <= (8-bitUsed):
 			dataType = prefix + " char"
-		elif bit <= 16:
+		elif bit <= (16-bitUsed):
 			dataType = prefix + " short"
 		else:
 			dataType = prefix + " int"

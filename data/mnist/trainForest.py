@@ -52,11 +52,11 @@ def main(argv):
 	outPath = "./text"
 
 	print("Reading train files")
-	XTrain,YTrain = readFile("mnist_train.csv")
+	XTrain,YTrain = readFile("train.csv")
 	#XTrain,YTrain = readFile("train-images-idx3-ubyte", "train-labels-idx1-ubyte", 60000)
 	
 	print("Reading test files")
-	XTest,YTest = readFile("mnist_test.csv")
+	XTest,YTest = readFile("test.csv")
 	
 	#XTest,YTest = readFile("t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte", 10000)
 
@@ -84,6 +84,9 @@ def main(argv):
 
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
+
+		if not os.path.islink("text/forest_"+str(ntree)+"_test.csv"):
+                        os.symlink("test.csv", "text/forest_"+str(ntree)+"_test.csv")
 
 		print("Saving model to PKL on disk")
 		joblib.dump(clf, "text/forest_"+str(ntree)+".pkl") 
