@@ -190,7 +190,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
                 else:
                     # check if it is the moment to go out the kernel
-                    if curSize + self.sizeOfSplit(tree, head) >= budget:
+                    if curSize + self.sizeOfSplit(tree, head) > budget:
                         labelIdx += 1
                         code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                         labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
