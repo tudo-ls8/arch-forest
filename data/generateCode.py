@@ -165,7 +165,7 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 def generateClassifier(outPath, X, Y, converter, namespace, featureType, forest, testFile, reps):
 	YPredicted_ = forest.predict(X)
 	targetAcc = sum(YPredicted_ == Y)
-	print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
+	#print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
 
 	# TODO: STORE NUM OF CLASSES IN TREE / FOREST ???
 	# 		THIS IS ONLY NEEDED FOR CLASSIFICATION!

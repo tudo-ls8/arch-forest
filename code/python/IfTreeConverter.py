@@ -160,7 +160,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-        budget = 32*500
+        budget = 16*500 # This was 32*500
         #print (inSize)
         #print (inIdx)
         curSize = inSize
