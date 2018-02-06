@@ -1,4 +1,6 @@
 from ForestConverter import TreeConverter
+import numpy as np
+import heapq
 
 class StandardIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
@@ -75,6 +77,66 @@ class OptimizedIFTreeConverter(TreeConverter):
         self.architecture = architecture
         if self.architecture != "arm" and self.architecture != "intel":
             raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+        self.inKernel = {}
+        self.givenBudget = 16*500 # This was 32*500
+
+    def pathSort(self, tree):
+        self.inKernel = {}
+        raise NotImplementedError("Please implement pathSort")
+
+    def nodeSort(self, tree, treeID):
+        self.inKernel = {}
+        curSize = 0
+        L = []
+        heapq.heapify(L)
+        nodes = [tree.head]
+        while len(nodes) > 0:
+            node = nodes.pop(0)
+            nodes.append(node.leftChild)
+            nodes.append(node.rightChild)
+            heapq.heappush(L, node)
+        # now L has BFS nodes sorted by probabilities
+        while len(L) > 0:
+            node = L.heappop(0)
+            inKernel[node.id] = True
+            curSize += sizeOfNode
+            # if the current size is larger than budget already, break.
+            if curSize >= self.givenBudget:
+                inKernel[node.id] = False
+                # in fact this can be avoided
+
+    def sizeOfNode(self, tree, node):
+        size = 0
+        if node.prediction is not None:
+            if splitDataType == "int" and self.architecture == "arm":
+                size += 2*4
+            elif splitDataType == "float" and self.architecture == "arm":
+                size += 2*4
+            elif splitDataType == "int" and self.architecture == "intel":
+                size += 10
+            elif splitDataType == "float" and self.architecture == "intel":
+                size += 10
+        else:
+            if self.containsFloat(tree):
+                splitDataType = "float"
+            else:
+                splitDataType = "int"
+            # In O0, the basic size of a split node is 4 instructions for loading.
+            # Since a split node must contain a pair of if-else statements,
+            # one instruction for branching is not avoidable.
+            if splitDataType == "int" and self.architecture == "arm":
+                # this is for arm int (ins * bytes)
+                size += 5*4
+            elif splitDataType == "float" and self.architecture == "arm":
+                # this is for arm float
+                size += 8*4
+            elif splitDataType == "int" and self.architecture == "intel":
+                # this is for intel integer (bytes)
+                size += 28
+            elif splitDataType == "float" and self.architecture == "intel":
+                # this is for intel float (bytes)
+                size += 17
+        return size
 
     def sizeOfSplit(self, tree, node):
         size = 0
@@ -162,7 +224,6 @@ class OptimizedIFTreeConverter(TreeConverter):
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-        budget = 16*500 # This was 32*500
         #print (inSize)
         #print (inIdx)
         curSize = inSize
@@ -307,14 +368,14 @@ class OptimizedIFTreeConverter(TreeConverter):
         labelIdx = inIdx
         # khchen: swap-algorithm + kernel grouping
         if head.prediction is not None:
-                if head.kernel is False:
+                if inKernel[head.id] is False:
                     return (code, tabs + "return " + str(int(head.prediction)) + ";\n", labelIdx)
                 else:
                     return (tabs + "return " + str(int(head.prediction)) + ";\n", labels,  labelIdx)
         else:
                 # it is split node
                 # it is already in labels, the rest is all in labels:
-                if head.kernel is False:
+                if inkernel[head.id] is False:
                     if head.probLeft >= head.probRight:
                         labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                         tmpOut = self.getNodeImplementation(tree,treeID, head.leftChild, labelIdx, level + 1)
@@ -344,7 +405,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     if head.probLeft >= head.probRight: #swapping
                        #if the child is still in kernel
                         code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
-                        if head.leftChild.kernel is True:
+                        if inKernel[head.leftChild.id] is True:
                             tmpOut= self.getNodeImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -362,7 +423,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                             labels += "}\n"
                         code += tabs + "} else {\n"
 
-                        if head.rightChild.kernel is True:
+                        if inKernel[head.rightChild.id] is True:
                             tmpOut = self.getNodeImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -382,7 +443,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     else:
                        #if the child is still in kernel
                         code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
-                        if head.rightChild.kernel is True:
+                        if inKernel[head.rightChild.id] is True:
                             tmpOut= self.getNodeImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -398,7 +459,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                             labelIdx = int(tmpOut[2])
                             labels += "}\n"
                         code += tabs + "} else {\n"
-                        if head.leftChild.kernel is True:
+                        if inKernel[head.leftChild.id] is True:
                             tmpOut = self.getNodeImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -438,6 +499,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         #mainCode, labelsCode, curSize, labelIdx
         #original call
         #output = self.getOriImplementation(tree, treeID, tree.head, True, 0, 0)
+        nodeSort(tree, treeID)
         output = self.getNodeImplementation(tree, treeID, tree.head, True, 0, 0)
         cppCode += output[0] #code
         cppCode += output[1] #label
