@@ -76,7 +76,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         super().__init__(dim, namespace, featureType)
         self.architecture = architecture
         if self.architecture != "arm" and self.architecture != "intel":
-            raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+                raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
         self.inKernel = {}
         self.givenBudget = 16*500 # This was 32*500
 
@@ -92,21 +92,30 @@ class OptimizedIFTreeConverter(TreeConverter):
         nodes = [tree.head]
         while len(nodes) > 0:
             node = nodes.pop(0)
-            nodes.append(node.leftChild)
-            nodes.append(node.rightChild)
+            #print(node)
+            if node.leftChild is not None:
+                nodes.append(node.leftChild)
+
+            if node.rightChild is not None:
+                nodes.append(node.rightChild)
             heapq.heappush(L, node)
         # now L has BFS nodes sorted by probabilities
         while len(L) > 0:
-            node = L.heappop(0)
-            inKernel[node.id] = True
-            curSize += sizeOfNode
+            node = heapq.heappop(L)
+            self.inKernel[node.id] = True
+            curSize += self.sizeOfNode(tree,node)
             # if the current size is larger than budget already, break.
             if curSize >= self.givenBudget:
-                inKernel[node.id] = False
+                self.inKernel[node.id] = False
                 # in fact this can be avoided
 
     def sizeOfNode(self, tree, node):
         size = 0
+        if self.containsFloat(tree):
+            splitDataType = "float"
+        else:
+            splitDataType = "int"
+
         if node.prediction is not None:
             if splitDataType == "int" and self.architecture == "arm":
                 size += 2*4
@@ -368,14 +377,14 @@ class OptimizedIFTreeConverter(TreeConverter):
         labelIdx = inIdx
         # khchen: swap-algorithm + kernel grouping
         if head.prediction is not None:
-                if inKernel[head.id] is False:
+                if self.inKernel[head.id] is False:
                     return (code, tabs + "return " + str(int(head.prediction)) + ";\n", labelIdx)
                 else:
                     return (tabs + "return " + str(int(head.prediction)) + ";\n", labels,  labelIdx)
         else:
                 # it is split node
                 # it is already in labels, the rest is all in labels:
-                if inkernel[head.id] is False:
+                if self.inkernel[head.id] is False:
                     if head.probLeft >= head.probRight:
                         labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                         tmpOut = self.getNodeImplementation(tree,treeID, head.leftChild, labelIdx, level + 1)
@@ -405,7 +414,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     if head.probLeft >= head.probRight: #swapping
                        #if the child is still in kernel
                         code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
-                        if inKernel[head.leftChild.id] is True:
+                        if self.inKernel[head.leftChild.id] is True:
                             tmpOut= self.getNodeImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -423,7 +432,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                             labels += "}\n"
                         code += tabs + "} else {\n"
 
-                        if inKernel[head.rightChild.id] is True:
+                        if self.inKernel[head.rightChild.id] is True:
                             tmpOut = self.getNodeImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -443,7 +452,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     else:
                        #if the child is still in kernel
                         code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
-                        if inKernel[head.rightChild.id] is True:
+                        if self.inKernel[head.rightChild.id] is True:
                             tmpOut= self.getNodeImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -459,7 +468,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                             labelIdx = int(tmpOut[2])
                             labels += "}\n"
                         code += tabs + "} else {\n"
-                        if inKernel[head.leftChild.id] is True:
+                        if self.inKernel[head.leftChild.id] is True:
                             tmpOut = self.getNodeImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
@@ -488,7 +497,7 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
-        tree.getProbAllPath()
+        tree.getProbAllPaths()
         featureType = self.getFeatureType()
         cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
@@ -499,7 +508,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         #mainCode, labelsCode, curSize, labelIdx
         #original call
         #output = self.getOriImplementation(tree, treeID, tree.head, True, 0, 0)
-        nodeSort(tree, treeID)
+        self.nodeSort(tree, treeID)
         output = self.getNodeImplementation(tree, treeID, tree.head, True, 0, 0)
         cppCode += output[0] #code
         cppCode += output[1] #label
