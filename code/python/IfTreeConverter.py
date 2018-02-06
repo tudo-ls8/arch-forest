@@ -81,8 +81,33 @@ class OptimizedIFTreeConverter(TreeConverter):
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         self.givenBudget = 32*1000 # This was 32*500
 
+    def getPaths(self, node = None, curPath = [], allpaths = None):
+        if node is None:
+            node = self.head
+        if allpaths is None:
+            allpaths = []
+        if node.prediction is not None:
+            allpaths.append(curPath)
+        else:
+            self.getPaths(node.leftChild, curPath + [node.id], allpaths)
+            self.getPaths(node.rightChild, curPath + [node.id], allpaths)
+        return allpaths
+
     def pathSort(self, tree):
         self.inKernel = {}
+        #print(len(self.getPaths(tree.head, [], [])))
+        curSize = 0
+        sizeOfPath = []
+        paths = sorted(self.getPaths(tree.head, [], []),key = lambda i: i[-1:])
+        sizeOfPath.append(reduce(lambda(x, y: self.sizeOfNode(tree,x)+self.sizeOfNode(tree,y)), paths))
+        for path, size in zip(paths, sizeOfPath):
+            curSize += size
+            if curSize >= self.givenBudget:
+                pass
+            else:
+                for node in path:
+                    self.inKernel[node.id] = True
+
 
     def nodeSort(self, tree):
         self.inKernel = {}
@@ -101,12 +126,13 @@ class OptimizedIFTreeConverter(TreeConverter):
         # now L has BFS nodes sorted by probabilities
         while len(L) > 0:
             node = heapq.heappop(L)
-            self.inKernel[node.id] = True
             curSize += self.sizeOfNode(tree,node)
             # if the current size is larger than budget already, break.
             if curSize >= self.givenBudget:
                 self.inKernel[node.id] = False
-                # in fact this can be avoided
+            else:
+                self.inKernel[node.id] = True
+
 
     def sizeOfNode(self, tree, node):
         size = 0
@@ -304,6 +330,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
 
+        #self.pathSort(tree)
         self.nodeSort(tree)
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
         cppCode += output[0] #code
