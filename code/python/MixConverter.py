@@ -78,7 +78,7 @@ class MixConverter(TreeConverter):
                         size += 5
             return size
 
-        def getIFImplementation(self, tree, treeID, head, inSize, level = 1):
+        def getIFImplementation(self, tree, treeID, head, inSize, mapping, level = 1):
             # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
 
             """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
@@ -114,26 +114,26 @@ class MixConverter(TreeConverter):
                     # check if it is the moment to go out the kernel, set up the root id then goto the end of the while loop.
                     if curSize + self.sizeOfSplit(tree, head) > budget:
                         # set up the index before goto
-                        code += tabs + '\t' + "subroot = "+str(head.id)+";\n"
+                        code += tabs + '\t' + "subroot = "+str(mapping[head.id])+";\n"
                         code += tabs + '\t' + "goto Label"+str(treeID)+";\n"
                     else:
                         curSize += self.sizeOfSplit(tree,head)
                         if head.probLeft >= head.probRight:
                                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
-                                tmpOut= self.getIFImplementation(tree, treeID, head.leftChild, curSize, level + 1)
+                                tmpOut= self.getIFImplementation(tree, treeID, head.leftChild, curSize, mapping, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                                 code += tabs + "} else {\n"
-                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, level + 1)
+                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, mapping, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                         else:
                                 code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
-                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, level + 1)
+                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, mapping, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                                 code += tabs + "} else {\n"
-                                tmpOut = self.getIFImplementation(tree, treeID, head.leftChild, curSize, level + 1)
+                                tmpOut = self.getIFImplementation(tree, treeID, head.leftChild, curSize, mapping, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                         code += tabs + "}\n"
@@ -142,6 +142,8 @@ class MixConverter(TreeConverter):
         def getNativeImplementation(self, head, treeID):
             arrayStructs = []
             nextIndexInArray = 1
+
+            mapping = {}
 
             # Path-oriented Layout
             head.parent = -1 #for root init
@@ -157,6 +159,7 @@ class MixConverter(TreeConverter):
                     while len(cset) != self.setSize: # 32/10
                         cset.append(node)
                         entry = []
+                        mapping[node.id] = len(arrayStructs)
 
                         if node.prediction is not None:
                                 entry.append(1)
@@ -235,7 +238,7 @@ class MixConverter(TreeConverter):
                     cppCode = cppCode[:-1] + "},"
             cppCode = cppCode[:-1] + "};"
 
-            return cppCode, arrLen
+            return cppCode, arrLen, mapping
 
 
         def getMaxThreshold(self, tree):
@@ -308,9 +311,10 @@ class MixConverter(TreeConverter):
             nativeImplementation = self.getNativeImplementation(tree.head, treeID)
             cppCode += nativeImplementation[0]
             arrLen = nativeImplementation[1]
+            mapping = nativeImplementation[2]
 
             #mainCode, labelsCode, curSize, labelIdx
-            ifImplementation = self.getIFImplementation(tree, treeID, tree.head, 0, 0)
+            ifImplementation = self.getIFImplementation(tree, treeID, tree.head, 0, mapping, 0)
             # kernel code
             cppCode += ifImplementation[0]
             
