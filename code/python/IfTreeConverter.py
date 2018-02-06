@@ -79,11 +79,10 @@ class OptimizedIFTreeConverter(TreeConverter):
                 raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
         self.inKernel = {}
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-        self.givenBudget = 16*500 # This was 32*500
+        self.givenBudget = 32*1000 # This was 32*500
 
     def pathSort(self, tree):
         self.inKernel = {}
-        raise NotImplementedError("Please implement pathSort")
 
     def nodeSort(self, tree, treeID):
         self.inKernel = {}
@@ -93,7 +92,6 @@ class OptimizedIFTreeConverter(TreeConverter):
         nodes = [tree.head]
         while len(nodes) > 0:
             node = nodes.pop(0)
-            #print(node)
             if node.leftChild is not None:
                 nodes.append(node.leftChild)
 
@@ -146,62 +144,6 @@ class OptimizedIFTreeConverter(TreeConverter):
             elif splitDataType == "float" and self.architecture == "intel":
                 # this is for intel float (bytes)
                 size += 17
-        return size
-
-    def sizeOfSplit(self, tree, node):
-        size = 0
-        if node.prediction is not None:
-            raise IndexError('this node is not spilit')
-        else:
-            if self.containsFloat(tree):
-                splitDataType = "float"
-            else:
-                splitDataType = "int"
-
-            # In O0, the basic size of a split node is 4 instructions for loading.
-            # Since a split node must contain a pair of if-else statements,
-            # one instruction for branching is not avoidable.
-            if splitDataType == "int" and self.architecture == "arm":
-                # this is for arm int (ins * bytes)
-                size += 5*4
-                if node.leftChild.prediction is not None:
-                    size += 2*4
-                if node.rightChild.prediction is not None:
-                    size += 2*4
-                else:
-                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 1*4
-                    # khchen:compilation should opt this with the else branch...
-            elif splitDataType == "float" and self.architecture == "arm":
-                # this is for arm float
-                size += 8*4
-                if node.leftChild.prediction is not None:
-                    size += 2*4
-                if node.rightChild.prediction is not None:
-                    size += 2*4
-                else:
-                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 1*4
-            elif splitDataType == "int" and self.architecture == "intel":
-                # this is for intel integer (bytes)
-                size += 28
-                if node.leftChild.prediction is not None:
-                    size += 10
-                if node.rightChild.prediction is not None:
-                    size += 10
-                else:
-                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 5
-            elif splitDataType == "float" and self.architecture == "intel":
-                # this is for intel float (bytes)
-                size += 17
-                if node.leftChild.prediction is not None:
-                    size += 10
-                if node.rightChild.prediction is not None:
-                    size += 10
-                else:
-                    # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                    size += 5
         return size
 
     def getImplementation(self, tree, treeID, head, inIdx, level = 1):

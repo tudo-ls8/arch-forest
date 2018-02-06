@@ -10,7 +10,7 @@ class MixConverter(TreeConverter):
                 #Generates a new mix-tree converter object
                 self.architecture = architecture
                 self.arrayLenBit = 0
-                
+
                 if self.architecture != "arm" and self.architecture != "intel":
                     raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
                 else:
@@ -18,67 +18,80 @@ class MixConverter(TreeConverter):
                         self.setSize = 8
                     else:
                         self.setSize = 10
+                self.inKernel = {}
+        # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
+                self.givenBudget = 32*1000 # This was 32*500
 
         def getNativeBasis(self, head, treeID):
                 return self.getNativeImplementation(head, treeID)
+        def pathSort(self, tree):
+            self.inKernel = {}
 
-        def sizeOfSplit(self, tree, node):
+        def nodeSort(self, tree, treeID):
+            self.inKernel = {}
+            curSize = 0
+            L = []
+            heapq.heapify(L)
+            nodes = [tree.head]
+            while len(nodes) > 0:
+                node = nodes.pop(0)
+                if node.leftChild is not None:
+                    nodes.append(node.leftChild)
+
+                if node.rightChild is not None:
+                    nodes.append(node.rightChild)
+                heapq.heappush(L, node)
+            # now L has BFS nodes sorted by probabilities
+            while len(L) > 0:
+                node = heapq.heappop(L)
+                self.inKernel[node.id] = True
+                curSize += self.sizeOfNode(tree,node)
+                # if the current size is larger than budget already, break.
+                if curSize >= self.givenBudget:
+                    self.inKernel[node.id] = False
+                    # in fact this can be avoided
+
+        def sizeOfNode(self, tree, node):
             size = 0
+            if self.containsFloat(tree):
+                splitDataType = "float"
+            else:
+                splitDataType = "int"
+
             if node.prediction is not None:
-                raise IndexError('this node is not spilit')
+                if splitDataType == "int" and self.architecture == "arm":
+                    size += 2*4
+                elif splitDataType == "float" and self.architecture == "arm":
+                    size += 2*4
+                elif splitDataType == "int" and self.architecture == "intel":
+                    size += 10
+                elif splitDataType == "float" and self.architecture == "intel":
+                    size += 10
             else:
                 if self.containsFloat(tree):
                     splitDataType = "float"
                 else:
                     splitDataType = "int"
-
                 # In O0, the basic size of a split node is 4 instructions for loading.
                 # Since a split node must contain a pair of if-else statements,
                 # one instruction for branching is not avoidable.
                 if splitDataType == "int" and self.architecture == "arm":
                     # this is for arm int (ins * bytes)
                     size += 5*4
-                    if node.leftChild.prediction is not None:
-                        size += 2*4
-                    if node.rightChild.prediction is not None:
-                        size += 2*4
-                    else:
-                        # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                        size += 1*4
-                        # khchen:compilation should opt this with the else branch...
                 elif splitDataType == "float" and self.architecture == "arm":
                     # this is for arm float
                     size += 8*4
-                    if node.leftChild.prediction is not None:
-                        size += 2*4
-                    if node.rightChild.prediction is not None:
-                        size += 2*4
-                    else:
-                        # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                        size += 1*4
                 elif splitDataType == "int" and self.architecture == "intel":
                     # this is for intel integer (bytes)
                     size += 28
-                    if node.leftChild.prediction is not None:
-                        size += 10
-                    if node.rightChild.prediction is not None:
-                        size += 10
-                    else:
-                        # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                        size += 5
                 elif splitDataType == "float" and self.architecture == "intel":
                     # this is for intel float (bytes)
                     size += 17
-                    if node.leftChild.prediction is not None:
-                        size += 10
-                    if node.rightChild.prediction is not None:
-                        size += 10
-                    else:
-                        # prepare for a potential goto. This should be recalculated once gotois not necessary.
-                        size += 5
             return size
 
-        def getIFImplementation(self, tree, treeID, head, inSize, mapping, level = 1):
+
+        def getImplementation(self, tree, treeID, head, mapping, level = 1):
+        #def getIFImplementation(self, tree, treeID, head, inSize, mapping, level = 1):
             # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
 
             """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
@@ -87,7 +100,6 @@ class MixConverter(TreeConverter):
                 tree : the body of this tree
                 treeID (TYPE): The id of this tree (in case we are dealing with a forest)
                 head (TYPE): The current node to generate an if-else structure for.
-                inSize : Parameter for the intermediate size of the code size
                 level (int, optional): The intendation level of the generated code for easier
                                                             reading of the generated code
 
@@ -101,43 +113,37 @@ class MixConverter(TreeConverter):
                                             .replace("{namespace}", self.namespace) \
                                             .replace("{feature_t}", featureType)
             code = ""
-            labels = ""
             tabs = "".join(['\t' for i in range(level)])
             # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-            budget = 32*500
-            curSize = inSize
 
             # khchen: swap-algorithm + kernel grouping
             if head.prediction is not None:
-                    return (tabs + "return " + str(int(head.prediction)) + ";\n",  curSize)
+                    if inKernel[head.id] is False:
+                        #it must be in Kernel, otherwise we are in trouble.
+                        raise NotImplementedError("This should don't happen!")
+                    return (tabs + "return " + str(int(head.prediction)) + ";\n" )
             else:
                     # check if it is the moment to go out the kernel, set up the root id then goto the end of the while loop.
-                    if curSize + self.sizeOfSplit(tree, head) > budget:
+                    if self.inKernel[head.id] is False:
                         # set up the index before goto
                         code += tabs + '\t' + "subroot = "+str(mapping[head.id])+";\n"
                         code += tabs + '\t' + "goto Label"+str(treeID)+";\n"
                     else:
-                        curSize += self.sizeOfSplit(tree,head)
                         if head.probLeft >= head.probRight:
                                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
-                                tmpOut= self.getIFImplementation(tree, treeID, head.leftChild, curSize, mapping, level + 1)
+                                code += self.getIFImplementation(tree, treeID, head.leftChild,  mapping, level + 1)
                                 code += tmpOut[0]
-                                curSize = int(tmpOut[1])
                                 code += tabs + "} else {\n"
-                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, mapping, level + 1)
+                                code += self.getIFImplementation(tree, treeID, head.rightChild,  mapping, level + 1)
                                 code += tmpOut[0]
-                                curSize = int(tmpOut[1])
                         else:
                                 code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
-                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, mapping, level + 1)
+                                code += self.getIFImplementation(tree, treeID, head.rightChild,  mapping, level + 1)
                                 code += tmpOut[0]
-                                curSize = int(tmpOut[1])
                                 code += tabs + "} else {\n"
-                                tmpOut = self.getIFImplementation(tree, treeID, head.leftChild, curSize, mapping, level + 1)
-                                code += tmpOut[0]
-                                curSize = int(tmpOut[1])
+                                code += self.getIFImplementation(tree, treeID, head.leftChild,  mapping, level + 1)
                         code += tabs + "}\n"
-            return (code, curSize)
+            return (code)
 
         def getNativeImplementation(self, head, treeID):
             arrayStructs = []
@@ -313,11 +319,11 @@ class MixConverter(TreeConverter):
             arrLen = nativeImplementation[1]
             mapping = nativeImplementation[2]
 
-            #mainCode, labelsCode, curSize, labelIdx
-            ifImplementation = self.getIFImplementation(tree, treeID, tree.head, 0, mapping, 0)
+            self.nodeSort(tree, treeID)
+            ifImplementation = self.getImplementation(tree, treeID, tree.head, mapping, 0)
             # kernel code
             cppCode += ifImplementation[0]
-            
+
             # Data Array
             cppCode += """
                     Label{id}:
@@ -336,7 +342,7 @@ class MixConverter(TreeConverter):
                     }
             """.replace("{id}", str(treeID)) \
                .replace("{arrayLenDataType}",self.getArrayLenType(arrLen))
-            
+
             cppCode += "}\n"
 
             # the rest is for generating the header
