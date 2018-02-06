@@ -291,6 +291,10 @@ def main(argv):
 
 			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
 			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
+			
+			print("\tGenerating MixTrees")
+			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
+			generateClassifier(cppPath + "/", X, Y, converter, "MixTree", featureType, loadedForest, testname, reps)
 			#print("Generating MixTree")
 			#converter = MixConverter(dim, "MixTree", featureType, turnPoint)
 			#generateClassifier(dirpath, X, Y, converter, "MixTree", featureType, tree, testdata)
@@ -309,6 +313,7 @@ all:
 	$(COMPILER) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o testOptimizedIfTree
 	$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree
 	$(COMPILER) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o testOptimizedNativeTree
+	$(COMPILER) $(FLAGS) MixTree.h MixTree.cpp testMixTree.cpp -o testMixTree
 			""".replace("{compiler}", compiler)
 
 			with open(cppPath + "/" + "Makefile",'w') as code_file:

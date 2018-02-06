@@ -5,14 +5,22 @@ import heapq
 class MixConverter(TreeConverter):
         """ A MixConverter converts a DecisionTree into its mixed structure in c language
         """
-        def __init__(self, dim, namespace, featureType, setSize = 8):
+        def __init__(self, dim, namespace, featureType, architecture):
                 super().__init__(dim, namespace, featureType)
                 #Generates a new mix-tree converter object
-                self.setSize = setSize
+                self.architecture = architecture
                 self.arrayLenBit = 0
+                
+                if self.architecture != "arm" and self.architecture != "intel":
+                    raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+                else:
+                    if self.architecture == "arm":
+                        self.setSize = 8
+                    else:
+                        self.setSize = 10
 
         def getNativeBasis(self, head, treeID):
-                return self.getNativeImplementation(head, treeID, self.treeType)
+                return self.getNativeImplementation(head, treeID)
 
         def sizeOfSplit(self, tree, node):
             size = 0
@@ -27,7 +35,7 @@ class MixConverter(TreeConverter):
                 # In O0, the basic size of a split node is 4 instructions for loading.
                 # Since a split node must contain a pair of if-else statements,
                 # one instruction for branching is not avoidable.
-                if splitDataType == "int" and setSize == "8":
+                if splitDataType == "int" and self.architecture == "arm":
                     # this is for arm int (ins * bytes)
                     size += 5*4
                     if node.leftChild.prediction is not None:
@@ -38,7 +46,7 @@ class MixConverter(TreeConverter):
                         # prepare for a potential goto. This should be recalculated once gotois not necessary.
                         size += 1*4
                         # khchen:compilation should opt this with the else branch...
-                elif splitDataType == "float" and setSize == "8":
+                elif splitDataType == "float" and self.architecture == "arm":
                     # this is for arm float
                     size += 8*4
                     if node.leftChild.prediction is not None:
@@ -48,7 +56,7 @@ class MixConverter(TreeConverter):
                     else:
                         # prepare for a potential goto. This should be recalculated once gotois not necessary.
                         size += 1*4
-                elif splitDataType == "int" and setSize == "10":
+                elif splitDataType == "int" and self.architecture == "intel":
                     # this is for intel integer (bytes)
                     size += 28
                     if node.leftChild.prediction is not None:
@@ -58,7 +66,7 @@ class MixConverter(TreeConverter):
                     else:
                         # prepare for a potential goto. This should be recalculated once gotois not necessary.
                         size += 5
-                elif splitDataType == "float" and setSize == "10":
+                elif splitDataType == "float" and self.architecture == "intel":
                     # this is for intel float (bytes)
                     size += 17
                     if node.leftChild.prediction is not None:
@@ -112,20 +120,20 @@ class MixConverter(TreeConverter):
                         curSize += self.sizeOfSplit(tree,head)
                         if head.probLeft >= head.probRight:
                                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
-                                tmpOut= self.getImplementation(tree, treeID, head.leftChild, curSize, level + 1)
+                                tmpOut= self.getIFImplementation(tree, treeID, head.leftChild, curSize, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                                 code += tabs + "} else {\n"
-                                tmpOut = self.getImplementation(tree, treeID, head.rightChild, curSize, level + 1)
+                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                         else:
                                 code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
-                                tmpOut = self.getImplementation(tree, treeID, head.rightChild, curSize, level + 1)
+                                tmpOut = self.getIFImplementation(tree, treeID, head.rightChild, curSize, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                                 code += tabs + "} else {\n"
-                                tmpOut = self.getImplementation(tree, treeID, head.leftChild, curSize, level + 1)
+                                tmpOut = self.getIFImplementation(tree, treeID, head.leftChild, curSize, level + 1)
                                 code += tmpOut[0]
                                 curSize = int(tmpOut[1])
                         code += tabs + "}\n"
@@ -227,7 +235,6 @@ class MixConverter(TreeConverter):
                     cppCode = cppCode[:-1] + "},"
             cppCode = cppCode[:-1] + "};"
 
-
             return cppCode, arrLen
 
 
@@ -297,16 +304,17 @@ class MixConverter(TreeConverter):
                                     .replace("{dim}", str(self.dim)) \
                                     .replace("{namespace}", self.namespace) \
                                     .replace("{feature_t}", featureType)
+            cppCode += "unsigned int subroot;\n"
+            nativeImplementation = self.getNativeImplementation(tree.head, treeID)
+            cppCode += nativeImplementation[0]
+            arrLen = nativeImplementation[1]
 
             #mainCode, labelsCode, curSize, labelIdx
-            output = self.getImplementation(tree, treeID, tree.head, 0, 0)
+            ifImplementation = self.getIFImplementation(tree, treeID, tree.head, 0, 0)
             # kernel code
-            cppCode += output[0]
-            cppCode += "}\n"
+            cppCode += ifImplementation[0]
+            
             # Data Array
-            ouput = self.getNativeBasis(tree.head, treeID) + "\n"
-            arrLen = output[1]
-            cppCode += output[0]
             cppCode += """
                     Label{id}:
                     {
@@ -323,7 +331,9 @@ class MixConverter(TreeConverter):
                             return tree{id}[i].prediction;
                     }
             """.replace("{id}", str(treeID)) \
-               .replace("{arrayLenDataType}",self.getArrayLenType(arrLen)) \
+               .replace("{arrayLenDataType}",self.getArrayLenType(arrLen))
+            
+            cppCode += "}\n"
 
             # the rest is for generating the header
             headerCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
@@ -342,13 +352,14 @@ class MixConverter(TreeConverter):
                     maxVal = upper
                 else:
                     prefix = ""
+                    bitUsed = 1
                     maxVal = max(-lower, upper)
 
                 splitBit = int(np.log2(maxVal) + 1 if maxVal != 0 else 1)
 
-                if splitBit <= 8:
+                if splitBit <= (8-bitUsed):
                     splitDataType = prefix + " char"
-                elif splitBit <= 16:
+                elif splitBit <= (16-bitUsed):
                     splitDataType = prefix + " short"
                 else:
                     splitDataType = prefix + " int"
