@@ -157,7 +157,7 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 							   .replace("{feature_t}", str(featureType)) \
 							   .replace("{N}", str(N)) \
 							   .replace("{DIM}", str(dim)) \
-							   .replace("{test_file}", testFile) 
+							   .replace("{test_file}", testFile)
 
 	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
@@ -247,18 +247,18 @@ def main(argv):
 		os.makedirs(basepath + "/cpp/" + target)
 
 	for f in sorted(os.listdir(basepath + "/text/")):
-		if f.endswith(".json"): 
+		if f.endswith(".json"):
 			name = f.replace(".json","")
 			cppPath = basepath + "/cpp/" + target + "/" + name
 			print("Generating", cppPath)
 
 			if not os.path.exists(cppPath):
 				os.makedirs(cppPath)
-			
+
 			forestPath = basepath + "/text/" + f
 
 			loadedForest = RandomForest.RandomForestClassifier(None)
-			loadedForest.fromJSON(forestPath) 
+			loadedForest.fromJSON(forestPath)
 
 			if basepath == "synthetic-chain":
 				print(basepath+"/text/"+name+"_test.csv")
@@ -268,9 +268,9 @@ def main(argv):
 			else:
 				# if basepath == "wearable-body-postures":
 				# 	reps = 300
-				testname = "../../../test.csv" 
+				testname = "../../../test.csv"
 				data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
-			
+
 			X = data[:,1:]
 			Y = data[:,0]
 
@@ -279,19 +279,19 @@ def main(argv):
 			numTest = len(X)
 
 			print("\tGenerating If-Trees")
-			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			generateClassifier(cppPath + "/", X, Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
+			#converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
+			#generateClassifier(cppPath + "/", X, Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
-			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
+			#converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
+			#generateClassifier(cppPath + "/", X, Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating NativeTrees")
-			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			generateClassifier(cppPath + "/", X, Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
+			#converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
+			#generateClassifier(cppPath + "/", X, Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
 
-			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
-			generateClassifier(cppPath + "/", X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
-			
+			#converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
+			#generateClassifier(cppPath + "/", X, Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
+
 			print("\tGenerating MixTrees")
 			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
 			generateClassifier(cppPath + "/", X, Y, converter, "MixTree", featureType, loadedForest, testname, reps)
@@ -308,7 +308,7 @@ def main(argv):
 			Makefile = """COMPILER = {compiler}
 FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
-all: 
+all:
 	$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree
 	$(COMPILER) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o testOptimizedIfTree
 	$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree
