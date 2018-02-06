@@ -132,8 +132,150 @@ class OptimizedIFTreeConverter(TreeConverter):
                     size += 5
         return size
 
-    def getImplementation(self, tree, treeID, head, kernel, inSize, inIdx, level = 1):
+    # original
+
+    def getOriImplementation(self, tree, treeID, head, kernel, inSize, inIdx, level = 1):
         # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
+
+        """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
+
+        Args:
+            tree : the body of this tree
+            treeID (TYPE): The id of this tree (in case we are dealing with a forest)
+            head (TYPE): The current node to generate an if-else structure for.
+            kernel (binary flag): Indicator for the case that the size of generated codes is greater than the cache.
+            inSize : Parameter for the intermediate size of the code size
+            inIdx : Parameter for the intermediate idx of the labels
+            level (int, optional): The intendation level of the generated code for easier
+                                                        reading of the generated code
+
+        Returns:
+            Tuple: The string of if-else code, the string of label if-else code, generated code size and Final label index
+        """
+        featureType = self.getFeatureType()
+        headerCode = "unsigned int {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+                                        .replace("{treeID}", str(treeID)) \
+                                        .replace("{dim}", str(self.dim)) \
+                                        .replace("{namespace}", self.namespace) \
+                                        .replace("{feature_t}", featureType)
+        code = ""
+        labels = ""
+        tabs = "".join(['\t' for i in range(level)])
+        # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
+        budget = 16*500 # This was 32*500
+        #print (inSize)
+        #print (inIdx)
+        curSize = inSize
+        labelIdx = inIdx
+        # khchen: swap-algorithm + kernel grouping
+        if head.prediction is not None:
+                if kernel is False:
+                    return (code, tabs + "return " + str(int(head.prediction)) + ";\n", curSize, labelIdx)
+                else:
+                    return (tabs + "return " + str(int(head.prediction)) + ";\n", labels, curSize, labelIdx)
+        else:
+                # it is already in labels, the rest is all in labels:
+                if kernel is False:
+                    if head.probLeft >= head.probRight:
+                        labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                        tmpOut = self.getImplementation(tree,treeID, head.leftChild, False, curSize, labelIdx, level + 1)
+                        code += tmpOut[0]
+                        labels += tmpOut[1]
+                        curSize = int(tmpOut[2])
+                        labelIdx = int(tmpOut[3])
+                        labels += tabs + "} else {\n"
+                        tmpOut = self.getImplementation(tree,treeID, head.rightChild, False, curSize, labelIdx,level + 1)
+                        code += tmpOut[0]
+                        labels += tmpOut[1]
+                        curSize = int(tmpOut[2])
+                        labelIdx = int(tmpOut[3])
+                        labels += tabs + "}\n"
+                    else:
+                        labels += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                        tmpOut = self.getImplementation(tree,treeID, head.rightChild, False, curSize, labelIdx, level + 1)
+                        code += tmpOut[0]
+                        labels += tmpOut[1]
+                        curSize = int(tmpOut[2])
+                        labelIdx = int(tmpOut[3])
+                        labels += tabs + "} else {\n"
+                        tmpOut = self.getImplementation(tree,treeID, head.leftChild, False, curSize, labelIdx,level + 1)
+                        code += tmpOut[0]
+                        labels += tmpOut[1]
+                        curSize = int(tmpOut[2])
+                        labelIdx = int(tmpOut[3])
+                        labels += tabs + "}\n"
+
+                else:
+                    # check if it is the moment to go out the kernel
+                    if curSize + self.sizeOfSplit(tree, head) > budget:
+                        labelIdx += 1
+                        code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
+                        labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
+                        labels += "{\n"
+                        if head.probLeft >= head.probRight:
+                            labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                            tmpOut = self.getImplementation(tree,treeID, head.leftChild, False, curSize, labelIdx,level + 1)
+                            code += tmpOut[0]
+                            labels += tmpOut[1]
+                            curSize = int(tmpOut[2])
+                            labelIdx = int(tmpOut[3])
+
+                            labels += tabs + "} else {\n"
+                            tmpOut = self.getImplementation(tree,treeID, head.rightChild, False, curSize, labelIdx,level + 1)
+                            code += tmpOut[0]
+                            labels += tmpOut[1]
+                            curSize = int(tmpOut[2])
+                            labelIdx = int(tmpOut[3])
+                        else:
+                            labels += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                            tmpOut = self.getImplementation(tree,treeID, head.rightChild, False, curSize, labelIdx,level + 1)
+                            code += tmpOut[0]
+                            labels += tmpOut[1]
+                            curSize = int(tmpOut[2])
+                            labelIdx = int(tmpOut[3])
+                            labels += tabs + "} else {\n"
+                            tmpOut = self.getImplementation(tree,treeID, head.leftChild, False, curSize, labelIdx,level + 1)
+                            code += tmpOut[0]
+                            labels += tmpOut[1]
+                            curSize = int(tmpOut[2])
+                            labelIdx = int(tmpOut[3])
+                        labels += tabs + "}\n"
+                        labels += "}\n"
+                    else:
+                        curSize += self.sizeOfSplit(tree,head)
+                        if head.probLeft >= head.probRight:
+                                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                                tmpOut= self.getImplementation(tree,treeID, head.leftChild, True, curSize, labelIdx,level + 1)
+                                code += tmpOut[0]
+                                labels += tmpOut[1]
+                                curSize = int(tmpOut[2])
+                                labelIdx = int(tmpOut[3])
+                                code += tabs + "} else {\n"
+                                tmpOut = self.getImplementation(tree,treeID, head.rightChild, True, curSize, labelIdx,level + 1)
+                                code += tmpOut[0]
+                                labels += tmpOut[1]
+                                curSize = int(tmpOut[2])
+                                labelIdx = int(tmpOut[3])
+                        else:
+                                code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                                tmpOut = self.getImplementation(tree,treeID, head.rightChild, True, curSize, labelIdx,level + 1)
+                                code += tmpOut[0]
+                                labels += tmpOut[1]
+                                curSize = int(tmpOut[2])
+                                labelIdx = int(tmpOut[3])
+                                code += tabs + "} else {\n"
+                                tmpOut = self.getImplementation(tree,treeID, head.leftChild, True, curSize, labelIdx,level + 1)
+                                code += tmpOut[0]
+                                labels += tmpOut[1]
+                                curSize = int(tmpOut[2])
+                                labelIdx = int(tmpOut[3])
+                        code += tabs + "}\n"
+        return (code, labels, curSize, labelIdx)
+
+
+    def getNodeImplementation(self, tree, treeID, head, kernel, inSize, inIdx, level = 1):
+        # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
+        # Node oriented.
 
         """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
 
@@ -266,6 +408,7 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
+        tree.getProbAllPath()
         featureType = self.getFeatureType()
         cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
@@ -274,9 +417,10 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{feature_t}", featureType)
 
         #mainCode, labelsCode, curSize, labelIdx
-        output = self.getImplementation(tree, treeID, tree.head, True, 0, 0)
-        cppCode += output[0]
-        cppCode += output[1]
+        #original call
+        output = self.getOriImplementation(tree, treeID, tree.head, True, 0, 0)
+        cppCode += output[0] #code
+        cppCode += output[1] #label
         cppCode += "}\n"
 
         headerCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
