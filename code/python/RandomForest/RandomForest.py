@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 from multiprocessing import Pool
 from sklearn.tree import _tree
+from functools import partial
 
 import numpy as np
 
@@ -20,11 +21,15 @@ class RandomForest(Forest):
 		self.basetype = basetype
 		self.bootstrap_sample = bootstrap_sample
 		self.min_splits = min_splits
+		self.num_jobs = 4
 
 	def _fit(self,indices):
 		tree = self.generateTree()
 		tree.fit(self.X[indices],self.Y[indices])
 		return tree
+
+	def _predict(self, tree, X):
+		return tree.predict(X)
 
 	def fit(self,X,Y):
 		self.X = X
@@ -37,7 +42,7 @@ class RandomForest(Forest):
 				indices.append([i for i in range(len(X))])
 
 		# do the actual training
-		pool = Pool(1) # TODO: DO MORE HERE LATER
+		pool = Pool(self.num_jobs) # TODO: DO MORE HERE LATER
 		self.trees = pool.map(self._fit, indices)
 
 	def predict(self,X):
@@ -62,23 +67,35 @@ class RandomForestClassifier(RandomForest):
 
 	def predict(self,X):
 		YPred = []
-		for x in X:
-			predCnt = []
-			for t in self.trees:
-				ypred = t.predict([x])[0]
-				if len(predCnt) <= ypred:
-					predCnt = predCnt + [0 for i in range(int(ypred)-len(predCnt) + 1)]
-				predCnt[int(ypred)] += 1
 
-			pred = 0
-			cnt = predCnt[0]
+		pool = Pool(self.num_jobs) 
+		_predict = partial(self._predict, X = X)
+		allPred = pool.map(_predict,self.trees)
+		maxClass = np.max(allPred)
 
-			for i in range(1,len(predCnt)):
-				if (predCnt[i] > cnt):
-					cnt = predCnt[i]
-					pred = i
+		for i in range(len(X)):
+			cnt = [0 for i in range(int(maxClass)+1)]
+			for j in range(len(self.trees)):
+				cnt[int(allPred[j][i])] += 1
+			YPred.append(np.argmax(cnt))
 
-			YPred.append(float(pred))
+		# for x in X:
+		# 	predCnt = []
+		# 	for t in self.trees:
+		# 		ypred = t.predict([x])[0]
+		# 		if len(predCnt) <= ypred:
+		# 			predCnt = predCnt + [0 for i in range(int(ypred)-len(predCnt) + 1)]
+		# 		predCnt[int(ypred)] += 1
+
+		# 	pred = 0
+		# 	cnt = predCnt[0]
+
+		# 	for i in range(1,len(predCnt)):
+		# 		if (predCnt[i] > cnt):
+		# 			cnt = predCnt[i]
+		# 			pred = i
+
+		# 	YPred.append(float(pred))
 
 		return YPred
 
