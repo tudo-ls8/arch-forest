@@ -14,6 +14,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.tree import _tree
 import timeit
+from sklearn.externals import joblib
 
 sys.path.append('../code/python')
 
@@ -271,10 +272,15 @@ def main(argv):
 			X = data[:,1:]
 			Y = data[:,0]
 
+			clf = joblib.load(basepath + "/text/" + name + ".pkl")
 			print("\tComputing target accuracy")
 			YPredicted_ = loadedForest.predict(X)
-			targetAcc = sum(YPredicted_ == Y)
-			print("\tAccuracy:%s" % accuracy_score(Y, YPredicted_))
+			YPredictedSK = clf.predict(X)
+			targetAcc = sum(YPredictedSK == Y)
+			print("\tAccuracy MY:%s" % accuracy_score(Y, YPredicted_))
+			print("\ttargetAcc MY: %s" % sum(YPredicted_ == Y))
+			print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
+			print("\ttargetAcc SK: %s" % targetAcc)
 
 			featureType = getFeatureType(X)
 			dim = len(X[0])
@@ -315,7 +321,6 @@ all:
 	$(COMPILER) $(FLAGS) OptimizedNodeIfTree.h OptimizedNodeIfTree.cpp testOptimizedNodeIfTree.cpp -o testOptimizedNodeIfTree
 	$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree
 	$(COMPILER) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o testOptimizedNativeTree
-	$(COMPILER) $(FLAGS) MixTree.h MixTree.cpp testMixTree.cpp -o testMixTree
 			""".replace("{compiler}", compiler)
 
 			with open(cppPath + "/" + "Makefile",'w') as code_file:

@@ -31,12 +31,13 @@ class NativeTreeConverter(TreeConverter):
 
             featureType = self.getFeatureType()
             headerCode = """struct {namespace}_Node{id} {
-                    bool isLeaf;
+                    //bool isLeaf;
                     unsigned int prediction;
                     {dimDataType} feature;
                     {splitType} split;
                     {arrayLenDataType} leftChild;
                     {arrayLenDataType} rightChild;
+                    unsigned char indicator;
 
             };\n""".replace("{namespace}", self.namespace) \
                        .replace("{id}", str(treeID)) \
@@ -99,30 +100,48 @@ class StandardNativeTreeConverter(NativeTreeConverter):
                     entry = []
 
                     if node.prediction is not None:
-                        #print("leaf:"+str(node.id))
-                        entry.append(1)
-                        entry.append(int(node.prediction))
-                        #entry.append(node.id)
-                        entry.append(0)
-                        entry.append(0)
-                        entry.append(0)
-                        entry.append(0)
+                        continue
+                        # #print("leaf:"+str(node.id))
+                        # entry.append(1)
+                        # entry.append(int(node.prediction))
+                        # #entry.append(node.id)
+                        # entry.append(0)
+                        # entry.append(0)
+                        # entry.append(0)
+                        # entry.append(0)
                     else:
-                        entry.append(0)
+                        #entry.append(0)
                         entry.append(0) # COnstant prediction
                         #entry.append(node.id)
                         entry.append(node.feature)
                         entry.append(node.split)
-                        entry.append(nextIndexInArray)
-                        nextIndexInArray += 1
-                        entry.append(nextIndexInArray)
-                        nextIndexInArray += 1
-
+                        
+                        if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
+                            indicator = 3
+                            entry.append(node.leftChild.prediction)
+                            entry.append(node.rightChild.prediction)
+                        elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
+                            indicator = 2
+                            entry.append(nextIndexInArray)
+                            nextIndexInArray += 1
+                            entry.append(node.rightChild.prediction)
+                        elif (node.leftChild.prediction is not None) and (node.rightChild.prediction is  None):
+                            indicator = 1
+                            entry.append(node.leftChild.prediction)
+                            entry.append(nextIndexInArray)
+                            nextIndexInArray += 1
+                        else:
+                            indicator = 0
+                            entry.append(nextIndexInArray)
+                            nextIndexInArray += 1
+                            entry.append(nextIndexInArray)
+                            nextIndexInArray += 1
+                        entry.append(indicator)
+                        
                         nodes.append(node.leftChild)
                         nodes.append(node.rightChild)
 
                     arrayStructs.append(entry)
-
 
             featureType = self.getFeatureType()
             arrLen = len(arrayStructs)
@@ -146,15 +165,22 @@ class StandardNativeTreeConverter(NativeTreeConverter):
                     unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
                             {arrayLenDataType} i = 0;
 
-                            while(!tree{id}[i].isLeaf) {
-                                    if (pX[tree{id}[i].feature] <= tree{id}[i].split){
-                                            i = tree{id}[i].leftChild;
+                            while(!true) {
+                                if (pX[tree{id}[i].feature] <= tree{id}[i].split){
+                                    if (treed{id}[i].indicator == 0 || treed{id}[i].indicator == 2) {
+                                        i = tree{id}[i].leftChild;
                                     } else {
-                                            i = tree{id}[i].rightChild;
+                                        return tree{id}[i].leftChild;
                                     }
+                                } else {
+                                    if (treed{id}[i].indicator == 0 || treed{id}[i].indicator == 1) {
+                                        i = tree{id}[i].rightChild;
+                                    } else {
+                                        return tree{id}[i].rightChild;
+                                    }
+                                }
                             }
 
-                            return tree{id}[i].prediction;
                     }
             """.replace("{id}", str(treeID)) \
                .replace("{dim}", str(self.dim)) \

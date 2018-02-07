@@ -65,6 +65,18 @@ class RandomForestClassifier(RandomForest):
 		else:
 			raise NotImplementedError("Could not found given tree class")
 
+	# def getch(self):
+	# 	import sys, tty, termios
+	# 	old_settings = termios.tcgetattr(0)
+	# 	new_settings = old_settings[:]
+	# 	new_settings[3] &= ~termios.ICANON
+	# 	try:
+	# 		termios.tcsetattr(0, termios.TCSANOW, new_settings)
+	# 		ch = sys.stdin.read(1)
+	# 	finally:
+	# 		termios.tcsetattr(0, termios.TCSANOW, old_settings)
+	# 	return ch
+
 	def predict(self,X):
 		YPred = []
 
@@ -78,6 +90,12 @@ class RandomForestClassifier(RandomForest):
 			for j in range(len(self.trees)):
 				cnt[int(allPred[j][i])] += 1
 			YPred.append(np.argmax(cnt))
+			# print("\tcnt=",cnt)
+			# for t in self.trees:
+			# 	ypred = t.predict([X[i]])[0]
+			# 	print("\t\t t:", ypred)
+			
+			# self.getch()
 
 		# for x in X:
 		# 	predCnt = []
