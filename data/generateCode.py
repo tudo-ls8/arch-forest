@@ -264,7 +264,6 @@ def main(argv):
 			print("\tLoading forest")
 			loadedForest = RandomForest.RandomForestClassifier(None)
 			loadedForest.fromJSON(forestPath)
-
 			if basepath == "synthetic-chain":
 				print(basepath+"/text/"+name+"_test.csv")
 				testname = "../../../text/" + name + "_test.csv"
@@ -302,6 +301,7 @@ all:
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 			del converter
+			loadedForest.fromJSON(forestPath)
 
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
 			for s in budgetSizes:
@@ -311,23 +311,26 @@ all:
 				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 				del converter
+				loadedForest.fromJSON(forestPath)
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
 				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
 				del converter
+				loadedForest.fromJSON(forestPath)
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
 				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 				del converter
+				loadedForest.fromJSON(forestPath)
 
 			print("\tGenerating NativeTrees")
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			del converter
-			
 			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
+			del converter
+			loadedForest.fromJSON(forestPath)
 
 			for s in setSizes:
 				print("\tNative for set-size", s)
@@ -336,6 +339,7 @@ all:
 				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 				del converter
+				loadedForest.fromJSON(forestPath)
 
 			# print("\tGenerating MixTrees")
 			# converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
