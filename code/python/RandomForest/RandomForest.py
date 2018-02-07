@@ -21,7 +21,7 @@ class RandomForest(Forest):
 		self.basetype = basetype
 		self.bootstrap_sample = bootstrap_sample
 		self.min_splits = min_splits
-		self.num_jobs = 1
+		self.num_jobs = 4
 
 	def _fit(self,indices):
 		tree = self.generateTree()
