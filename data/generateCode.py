@@ -294,9 +294,9 @@ def main(argv):
 			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
 			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
 
-			print("\tGenerating MixTrees")
-			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
-			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, testname, reps)
+			# print("\tGenerating MixTrees")
+			# converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
+			# generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, testname, reps)
 
 			if target == "intel":
 				compiler = "g++"

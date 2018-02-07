@@ -215,12 +215,16 @@ class Tree():
 			node.pathProb = curProb
 			#print("Leaf nodes "+str(node.id)+" : "+str(curProb))
 		else:
-			try:
-				pathNodes.index(node.id)
-				#this node is root
-			except ValueError:
-				pathNodes.append(node.id)
+			if len(pathNodes) == 0:
 				curPath.append(1)
+
+			pathNodes.append(node.id)
+			# try:
+			# 	pathNodes.index(node.id)
+			# 	#this node is root
+			# except ValueError:
+			# 	pathNodes.append(node.id)
+			# 	curPath.append(1)
 
 			curProb = reduce(lambda x, y: x*y, curPath)
 			node.pathProb = curProb
@@ -241,6 +245,24 @@ class Tree():
 		paths = self.getAllPaths()
 		return sum([len(p) for p in paths]) / len(paths)
 	
+	def getAllLeafPaths(self, node = None, curPath = [], allPaths = None):
+		# NOTE: FOR SOME REASON allPaths = [] DOES NOT CORRECTLY RESET
+		# 		THE allPaths VARIABLE. THUS WE USE NONE HERE 
+		if allPaths is None:
+			allPaths = []
+
+		if node is None:
+			node = self.head
+
+		if node.prediction is not None:
+			curPath.append((node.id,1))
+			allPaths.append(curPath)
+		else:
+			self.getAllLeafPaths(node.leftChild, curPath + [(node.id,node.probLeft)], allPaths)
+			self.getAllLeafPaths(node.rightChild, curPath + [(node.id,node.probRight)], allPaths)
+		
+		return allPaths
+
 	# This returns all sub-paths starting with the root node
 	def getAllPaths(self, node = None, curPath = [], allPaths = None):
 		# NOTE: FOR SOME REASON allPaths = [] DOES NOT CORRECTLY RESET

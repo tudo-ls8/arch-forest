@@ -1,5 +1,6 @@
 from ForestConverter import TreeConverter
 import numpy as np
+from functools import reduce
 import heapq
 
 class StandardIFTreeConverter(TreeConverter):
@@ -81,42 +82,67 @@ class OptimizedIFTreeConverter(TreeConverter):
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         self.givenBudget = 32*1000 # This was 32*500
 
-    def getPaths(self, node = None, curPath = [], allpaths = None):
-        if node is None:
-            node = self.head
-        if allpaths is None:
-            allpaths = []
-        if node.prediction is not None:
-            allpaths.append(curPath+[node.id])
-        else:
-            self.getPaths(node.leftChild, curPath + [node.id], allpaths)
-            self.getPaths(node.rightChild, curPath + [node.id], allpaths)
-        return allpaths
+    # def getPaths(self, node = None, curPath = [], allpaths = None):
+    #     if node is None:
+    #         node = self.head
+    #     if allpaths is None:
+    #         allpaths = []
+    #     if node.prediction is not None:
+    #         allpaths.append(curPath+[node.id])
+    #     else:
+    #         self.getPaths(node.leftChild, curPath + [node.id], allpaths)
+    #         self.getPaths(node.rightChild, curPath + [node.id], allpaths)
+    #     return allpaths
 
+    # SORT ALL PATH ACCORIDNG THEIR PROBABILITY
     def pathSort(self, tree):
         self.inKernel = {}
         #print(len(self.getPaths(tree.head, [], [])))
         curSize = 0
-        s = []
-        flag = False
-        paths = sorted(self.getPaths(tree.head, [], []),key = lambda i: i[-1:])
+        # s = set([])
+        # flag = False
+
+        allPath = tree.getAllLeafPaths()
+        paths = []
+        for p in allPath:
+            prob = 1
+            path = []
+            for (nid,nprob) in p:
+                prob *= nprob
+                path.append(nid)
+
+            paths.append((path,prob))
+
+        paths = sorted(paths, key=lambda x:x[1], reverse=True)
+        #print("paths=",tmpPathes)
+        #pathProbs, paths = tree.getProbAllPaths()
+        
+        # tmp = [list(x) for x in zip(*sorted(zip(pathProbs, paths), key=lambda pair: pair[0]))]
+        # paths = tmp[1]
+        # print("sorted=",paths)
+
+        # paths = sorted(paths, key=lambda x: x[1])
+        # allPathProb = []
+        # for p in allPaths:
+        #     prob = reduce(lambda x, y: x[1]*y[1], curPath)
+        #     allPathProb.append((p,prob))
+
+        # allPathProb = sorted(allPathProb,key = lambda x : x[1])
         #O(n^2) to clean up the duplicates
-        for i in paths:
-            if i not in s:
-                s.append(i)
+        # for i in paths:
+        #     s.add(i)
+            # if i not in s:
+            #     s.append(i)
         #print(len(s))
         #test = []
-        for path in s:
-            for node in path:
-                try:
-                    if self.inKernel[node] == True:
-                        continue
-                except KeyError:
-                    curSize += self.sizeOfNode(tree, tree.nodes[node])
-                if curSize >= self.givenBudget:
-                    self.inKernel[node] = False
-                else:
-                    self.inKernel[node] = True
+        for path in paths:
+            for nodeid in path[0]:
+                if not nodeid in self.inKernel:
+                    if curSize >= self.givenBudget:
+                        self.inKernel[nodeid] = False
+                    else:
+                        curSize += self.sizeOfNode(tree, tree.nodes[nodeid])
+                        self.inKernel[nodeid] = True
         #print(tree.nodes[5].prediction)
         #print(tree.nodes[6].prediction)
         #print(test)
@@ -344,9 +370,9 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
-        print("GET ALL PROBS")
+        #print("GET ALL PROBS")
         tree.getProbAllPaths()
-        print("DONE PROBS")
+        #print("DONE PROBS")
 
         featureType = self.getFeatureType()
         cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
@@ -354,14 +380,14 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
-        print("PATH SORT")
+        #print("PATH SORT")
         self.pathSort(tree)
-        print("PATH SORT DONE")
+        #print("PATH SORT DONE")
 
         #self.nodeSort(tree)
-        print("GET IMPL")
+        #print("GET IMPL")
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
-        print("GET IMPL DONE")
+        #print("GET IMPL DONE")
 
         cppCode += output[0] #code
         cppCode += output[1] #label
