@@ -162,12 +162,7 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
 
-def generateClassifier(outPath, X, Y, converter, namespace, featureType, forest, testFile, reps):
-	print("Getting accuracy")
-	YPredicted_ = forest.predict(X)
-	targetAcc = sum(YPredicted_ == Y)
-	print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
-
+def generateClassifier(outPath, targetAcc, converter, namespace, featureType, forest, testFile, reps):
 	# TODO: STORE NUM OF CLASSES IN TREE / FOREST ???
 	# 		THIS IS ONLY NEEDED FOR CLASSIFICATION!
 	numClasses = len(set(Y))
@@ -276,6 +271,11 @@ def main(argv):
 			X = data[:,1:]
 			Y = data[:,0]
 
+			print("Computing target accuracy")
+			YPredicted_ = loadedForest.predict(X)
+			targetAcc = sum(YPredicted_ == Y)
+			print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
+
 			featureType = getFeatureType(X)
 			dim = len(X[0])
 			numTest = len(X)
@@ -297,10 +297,6 @@ def main(argv):
 			print("\tGenerating MixTrees")
 			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
 			generateClassifier(cppPath + "/", X, Y, converter, "MixTree", featureType, loadedForest, testname, reps)
-			#print("Generating MixTree")
-			#converter = MixConverter(dim, "MixTree", featureType, turnPoint)
-			#generateClassifier(dirpath, X, Y, converter, "MixTree", featureType, tree, testdata)
-			#$(CXX) $(FLAGS) MixTree.h MixTree.cpp testMixTree.cpp -o testMixTree
 
 			if target == "intel":
 				compiler = "g++"
