@@ -225,13 +225,13 @@ def main(argv):
 
 	#if len(argv) < 3:
 	if target == "intel":
-		setSizes = [5,10,25,50]
-		budgetSizes = [16*1000, 32*1000, 64*1000]
+		setSizes = [10,25]
+		budgetSizes = [32*1000, 64*1000]
 		#setSize = 10 # 5,10,25,50
 		#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
 	else:
-		setSizes = [5,8,20,40]
-		budgetSizes = [16*1000, 32*1000, 64*1000]
+		setSizes = [5,20]
+		budgetSizes = [32*1000, 64*1000]
 			#setSize = 8 # 5,8,20,40
 			#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
 	# else:
@@ -303,34 +303,27 @@ all:
 """
 			print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			print(sys.getsizeof(converter))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
-			print(sys.getsizeof(converter))
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
 			for s in budgetSizes:
 				print("\tIf-Tree for budget", s)
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree_" + str(s), featureType, target, "path", s))
-				print(sys.getsizeof(converter))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
-				del converter
-				print(sys.getsizeof(converter))
+
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
-				del converter
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
-				del converter
 
 			print("\tGenerating NativeTrees")
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
-			del converter
 
 			for s in setSizes:
 				print("\tNative for set-size", s)
@@ -338,7 +331,6 @@ all:
 				converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree_" + str(s), featureType, s))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
-				del converter
 
 			# print("\tGenerating MixTrees")
 			# converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
