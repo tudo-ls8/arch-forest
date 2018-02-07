@@ -73,14 +73,17 @@ class StandardIFTreeConverter(TreeConverter):
 class OptimizedIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
     """
-    def __init__(self, dim, namespace, featureType, architecture):
+    def __init__(self, dim, namespace, featureType, architecture, orientation="path"):
         super().__init__(dim, namespace, featureType)
         self.architecture = architecture
         if self.architecture != "arm" and self.architecture != "intel":
-                raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+           raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
         self.inKernel = {}
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         self.givenBudget = 32*1000 # This was 32*500
+        self.orientation = orientation
+        if self.orientation != "path" and self.orientation != "node":
+            raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
 
     # def getPaths(self, node = None, curPath = [], allpaths = None):
     #     if node is None:
@@ -101,11 +104,11 @@ class OptimizedIFTreeConverter(TreeConverter):
         curSize = 0
         # s = set([])
         # flag = False
-        print("start getAllLeafPaths")
+        #print("start getAllLeafPaths")
         allPath = tree.getAllLeafPaths()
-        print("done getAllLeafPatgs")
+        #print("done getAllLeafPatgs")
 	
-        print("prepare paths")
+        #print("prepare paths")
         paths = []
         for p in allPath:
             prob = 1
@@ -115,10 +118,10 @@ class OptimizedIFTreeConverter(TreeConverter):
                 path.append(nid)
 
             paths.append((path,prob))
-        print("prepare done")
-        print("sort")
+        #print("prepare done")
+        #print("sort")
         paths = sorted(paths, key=lambda x:x[1], reverse=True)
-        print("sort done")
+        #print("sort done")
         #print("paths=",tmpPathes)
         #pathProbs, paths = tree.getProbAllPaths()
         
@@ -145,7 +148,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         else:
             splitDataType = "int"
 
-        print("prepare kernel")
+        #print("prepare kernel")
         for path in paths:
             for nodeid in path[0]:
                 if not nodeid in self.inKernel:
@@ -154,7 +157,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     else:
                         curSize += self.sizeOfNode(tree, tree.nodes[nodeid], splitDataType)
                         self.inKernel[nodeid] = True
-        print("kernel done")
+        #print("kernel done")
         #print(tree.nodes[5].prediction)
         #print(tree.nodes[6].prediction)
         #print(test)
@@ -379,9 +382,9 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
-        print("\tGET ALL PROBS")
+        #print("\tGET ALL PROBS")
         tree.getProbAllPaths()
-        print("\tDONE PROBS")
+        #print("\tDONE PROBS")
 
         featureType = self.getFeatureType()
         cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
@@ -396,14 +399,17 @@ class OptimizedIFTreeConverter(TreeConverter):
         #self.nodeSort(tree)
 
         #print("GET IMPL")
-        print("\tPATH SORT")
-        self.pathSort(tree)
-        print("\tPATH SORT DONE")
+        #print("\tPATH SORT")
+        if self.orientation == "path":
+            self.pathSort(tree)
+        else:
+            self.nodeSort(tree)            
+        #print("\tPATH SORT DONE")
 
         #self.nodeSort(tree)
-        print("\tGET IMPL")
+        #print("\tGET IMPL")
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
-        print("\tGET IMPL DONE")
+        #print("\tGET IMPL DONE")
 
         cppCode += output[0] #code
         cppCode += output[1] #label

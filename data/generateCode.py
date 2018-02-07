@@ -284,8 +284,11 @@ def main(argv):
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
-			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
+			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree", featureType, target, "path"))
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedPathIfTree", featureType, loadedForest, testname, reps)
+
+			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree", featureType, target, "node"))
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNodeIfTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating NativeTrees")
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
@@ -308,7 +311,8 @@ FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
 all:
 	$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree
-	$(COMPILER) $(FLAGS) OptimizedIfTree.h OptimizedIfTree.cpp testOptimizedIfTree.cpp -o testOptimizedIfTree
+	$(COMPILER) $(FLAGS) OptimizedPathIfTree.h OptimizedPathIfTree.cpp testOptimizedPathIfTree.cpp -o testOptimizedPathIfTree
+	$(COMPILER) $(FLAGS) OptimizedNodeIfTree.h OptimizedNodeIfTree.cpp testOptimizedNodeIfTree.cpp -o testOptimizedNodeIfTree
 	$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree
 	$(COMPILER) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o testOptimizedNativeTree
 	$(COMPILER) $(FLAGS) MixTree.h MixTree.cpp testMixTree.cpp -o testMixTree
