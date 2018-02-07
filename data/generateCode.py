@@ -279,15 +279,15 @@ def main(argv):
 			X = data[:,1:]
 			Y = data[:,0]
 
-			clf = joblib.load(basepath + "/text/" + name + ".pkl")
+			#clf = joblib.load(basepath + "/text/" + name + ".pkl")
 			print("\tComputing target accuracy")
 			YPredicted_ = loadedForest.predict(X)
-			YPredictedSK = clf.predict(X)
+			#YPredictedSK = clf.predict(X)
 			targetAcc = sum(YPredicted_ == Y)
-			print("\tAccuracy MY:%s" % accuracy_score(Y, YPredicted_))
-			print("\ttargetAcc MY: %s" % sum(YPredicted_ == Y))
-			print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
-			print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
+			#print("\tAccuracy MY:%s" % accuracy_score(Y, YPredicted_))
+			print("\ttargetAcc: %s" % sum(YPredicted_ == Y))
+			#print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
+			#print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
 
 			featureType = getFeatureType(X)
 			dim = len(X[0])
