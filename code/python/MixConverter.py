@@ -314,8 +314,8 @@ class MixConverter(TreeConverter):
                                     .replace("{namespace}", self.namespace) \
                                     .replace("{feature_t}", featureType)
             cppCode += "unsigned int subroot;\n"
-            nativeImplementation = self.getNativeImplementation(tree.head, treeID) + "\n"
-            cppCode += nativeImplementation[0]
+            nativeImplementation = self.getNativeImplementation(tree.head, treeID)
+            cppCode += nativeImplementation[0]+ "\n"
             arrLen = nativeImplementation[1]
             mapping = nativeImplementation[2]
 

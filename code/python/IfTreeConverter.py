@@ -1,6 +1,7 @@
 from ForestConverter import TreeConverter
 import numpy as np
 import heapq
+from functools import reduce
 
 class StandardIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
@@ -87,7 +88,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         if allpaths is None:
             allpaths = []
         if node.prediction is not None:
-            allpaths.append(curPath)
+            allpaths.append(curPath+[node.id])
         else:
             self.getPaths(node.leftChild, curPath + [node.id], allpaths)
             self.getPaths(node.rightChild, curPath + [node.id], allpaths)
@@ -97,16 +98,38 @@ class OptimizedIFTreeConverter(TreeConverter):
         self.inKernel = {}
         #print(len(self.getPaths(tree.head, [], [])))
         curSize = 0
-        sizeOfPath = []
+        s = []
+        flag = False
         paths = sorted(self.getPaths(tree.head, [], []),key = lambda i: i[-1:])
-        sizeOfPath.append(reduce(lambda(x, y: self.sizeOfNode(tree,x)+self.sizeOfNode(tree,y)), paths))
-        for path, size in zip(paths, sizeOfPath):
-            curSize += size
-            if curSize >= self.givenBudget:
-                pass
-            else:
-                for node in path:
-                    self.inKernel[node.id] = True
+        #O(n^2) to clean up the duplicates
+        for i in paths:
+            if i not in s:
+                s.append(i)
+        #print(len(s))
+        #test = []
+        for path in s:
+            for node in path:
+                try:
+                    if self.inKernel[node] == True:
+                        continue
+                except KeyError:
+                    curSize += self.sizeOfNode(tree, tree.nodes[node])
+                if curSize >= self.givenBudget:
+                    self.inKernel[node] = False
+                else:
+                    self.inKernel[node] = True
+        #print(tree.nodes[5].prediction)
+        #print(tree.nodes[6].prediction)
+        #print(test)
+
+        '''
+        sizeOfPath = []
+        for path in s:
+            sizeOfPath.append(reduce((lambda x, y: self.sizeOfNode(tree,tree.nodes[x])+self.sizeOfNode(tree,tree.nodes[y])), path))
+            print(path)
+        #print(s)
+
+        '''
 
 
     def nodeSort(self, tree):
@@ -330,8 +353,8 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
 
-        #self.pathSort(tree)
-        self.nodeSort(tree)
+        self.pathSort(tree)
+        #self.nodeSort(tree)
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
         cppCode += output[0] #code
         cppCode += output[1] #label
