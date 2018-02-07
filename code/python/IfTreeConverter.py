@@ -135,13 +135,18 @@ class OptimizedIFTreeConverter(TreeConverter):
             #     s.append(i)
         #print(len(s))
         #test = []
+        if self.containsFloat(tree):
+            splitDataType = "float"
+        else:
+            splitDataType = "int"
+
         for path in paths:
             for nodeid in path[0]:
                 if not nodeid in self.inKernel:
                     if curSize >= self.givenBudget:
                         self.inKernel[nodeid] = False
                     else:
-                        curSize += self.sizeOfNode(tree, tree.nodes[nodeid])
+                        curSize += self.sizeOfNode(tree, tree.nodes[nodeid], splitDataType)
                         self.inKernel[nodeid] = True
         #print(tree.nodes[5].prediction)
         #print(tree.nodes[6].prediction)
@@ -158,6 +163,11 @@ class OptimizedIFTreeConverter(TreeConverter):
 
 
     def nodeSort(self, tree):
+        if self.containsFloat(tree):
+            splitDataType = "float"
+        else:
+            splitDataType = "int"
+
         self.inKernel = {}
         curSize = 0
         L = []
@@ -174,7 +184,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         # now L has BFS nodes sorted by probabilities
         while len(L) > 0:
             node = heapq.heappop(L)
-            curSize += self.sizeOfNode(tree,node)
+            curSize += self.sizeOfNode(tree,node, splitDataType)
             # if the current size is larger than budget already, break.
             if curSize >= self.givenBudget:
                 self.inKernel[node.id] = False
@@ -182,13 +192,9 @@ class OptimizedIFTreeConverter(TreeConverter):
                 self.inKernel[node.id] = True
 
 
-    def sizeOfNode(self, tree, node):
+    def sizeOfNode(self, tree, node, splitDataType):
         size = 0
-        if self.containsFloat(tree):
-            splitDataType = "float"
-        else:
-            splitDataType = "int"
-
+       
         if node.prediction is not None:
             if splitDataType == "int" and self.architecture == "arm":
                 size += 2*4
@@ -199,10 +205,6 @@ class OptimizedIFTreeConverter(TreeConverter):
             elif splitDataType == "float" and self.architecture == "intel":
                 size += 10
         else:
-            if self.containsFloat(tree):
-                splitDataType = "float"
-            else:
-                splitDataType = "int"
             # In O0, the basic size of a split node is 4 instructions for loading.
             # Since a split node must contain a pair of if-else statements,
             # one instruction for branching is not avoidable.
@@ -381,10 +383,11 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
         #print("PATH SORT")
-        self.pathSort(tree)
+        #self.pathSort(tree)
         #print("PATH SORT DONE")
 
-        #self.nodeSort(tree)
+        self.nodeSort(tree)
+
         #print("GET IMPL")
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
         #print("GET IMPL DONE")
