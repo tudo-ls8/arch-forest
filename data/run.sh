@@ -18,7 +18,7 @@ fi
 for d in ./$1/cpp/$2/*/; do
     echo $d
 	cd $d
-	measurments="$d,$(./testStandardIfTree),$(./testOptimizedPathIfTree),$(./testOptimizedNodeIfTree),$(./testStandardNativeTree),$(./testOptimizedNativeTree)"
+	measurments="$d,$(./testStandardIfTree),$(./testOptimizedSwapIfTree),$(./testOptimizedPathIfTree),$(./testOptimizedNodeIfTree),$(./testStandardNativeTree),$(./testOptimizedNativeTree)"
 	printf "$measurments \n"
 	cd ../../../..
 	#echo $measurments >> results_$2.csv

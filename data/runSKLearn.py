@@ -52,7 +52,7 @@ def main(argv):
 				start = timeit.default_timer()
 				YPredicted = clf.predict(XTest)
 				end = timeit.default_timer()
-				runtimes.append((end-start)*1000)	
+				runtimes.append((end-start)/len(XTest)*1000)
 
 			print(basepath+"/text/"+f,",",np.mean(runtimes),",",np.var(runtimes))			
 

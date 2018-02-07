@@ -73,17 +73,17 @@ class StandardIFTreeConverter(TreeConverter):
 class OptimizedIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
     """
-    def __init__(self, dim, namespace, featureType, architecture, orientation="path"):
+    def __init__(self, dim, namespace, featureType, architecture, orientation="path", budgetSize=32*1000):
         super().__init__(dim, namespace, featureType)
         self.architecture = architecture
         if self.architecture != "arm" and self.architecture != "intel":
            raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
         self.inKernel = {}
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-        self.givenBudget = 32*1000 # This was 32*500
+        self.givenBudget = budgetSize
         self.orientation = orientation
-        if self.orientation != "path" and self.orientation != "node":
-            raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+        if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap":
+            raise NotImplementedError("Please use 'path' or 'node' or 'swap' for orientation")
 
     # def getPaths(self, node = None, curPath = [], allpaths = None):
     #     if node is None:
@@ -171,7 +171,6 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         '''
 
-
     def nodeSort(self, tree):
         if self.containsFloat(tree):
             splitDataType = "float"
@@ -231,6 +230,45 @@ class OptimizedIFTreeConverter(TreeConverter):
                 # this is for intel float (bytes)
                 size += 17
         return size
+
+    def getSwapImplementation(self, treeID, head, level = 1):
+        """ Generate the actual if-else implementation for a given node
+
+        Args:
+            treeID (TYPE): The id of this tree (in case we are dealing with a forest)
+            head (TYPE): The current node to generate an if-else structure for.
+            level (int, optional): The intendation level of the generated code for easier
+                                                        reading of the generated code
+
+        Returns:
+            String: The actual if-else code as a string
+        """
+        featureType = self.getFeatureType()
+        headerCode = "unsigned int {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+                                        .replace("{treeID}", str(treeID)) \
+                                        .replace("{dim}", str(self.dim)) \
+                                        .replace("{namespace}", self.namespace) \
+                                        .replace("{feature_t}", featureType)
+        code = ""
+        tabs = "".join(['\t' for i in range(level)])
+
+        # khchen: swap-algorithm
+        if head.prediction is not None:
+                return tabs + "return " + str(int(head.prediction)) + ";\n" ;
+        else:
+                if head.probLeft >= head.probRight:
+                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                        code += self.getSwapImplementation(treeID, head.leftChild, level + 1)
+                        code += tabs + "} else {\n"
+                        code += self.getSwapImplementation(treeID, head.rightChild, level + 1)
+                        code += tabs + "}\n"
+                else:
+                        code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                        code += self.getSwapImplementation(treeID, head.rightChild, level + 1)
+                        code += tabs + "} else {\n"
+                        code += self.getSwapImplementation(treeID, head.leftChild, level + 1)
+                        code += tabs + "}\n"
+        return code
 
     def getImplementation(self, tree, treeID, head, inIdx, level = 1):
         # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
@@ -402,17 +440,23 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("\tPATH SORT")
         if self.orientation == "path":
             self.pathSort(tree)
+            output = self.getImplementation(tree, treeID, tree.head, 0)
+            cppCode += output[0] #code
+            cppCode += output[1] #label
+        elif self.orientation == "swap":
+            cppCode += self.getSwapImplementation(treeID, tree.head)
         else:
             self.nodeSort(tree)            
+            output = self.getImplementation(tree, treeID, tree.head, 0)
+            cppCode += output[0] #code
+            cppCode += output[1] #label
         #print("\tPATH SORT DONE")
 
         #self.nodeSort(tree)
         #print("\tGET IMPL")
-        output = self.getImplementation(tree, treeID, tree.head, 0, 0)
+        
         #print("\tGET IMPL DONE")
 
-        cppCode += output[0] #code
-        cppCode += output[1] #label
         cppCode += "}\n"
 
         headerCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \

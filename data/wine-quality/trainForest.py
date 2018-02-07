@@ -43,7 +43,7 @@ def main(argv):
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")
 		clf.fit(XTrain,YTrain)
-		
+
 		print("Testing model on " + str(len(XTest)) + " data points")
 		start = timeit.default_timer()
 		YPredicted = clf.predict(XTest)
@@ -62,6 +62,20 @@ def main(argv):
 
 		with open("text/forest_"+str(ntree)+".json",'w') as outFile:
 			outFile.write(forest.str())
+
+		loadedForest = RandomForest.RandomForestClassifier(None)
+		loadedForest.fromJSON("text/forest_"+str(ntree)+".json")
+		Y1 = clf.predict(XTest)
+		Y2 = forest.predict(XTest)
+		Y3 = loadedForest.predict(XTest)
+		for y2,y3 in zip(Y2,Y3):
+			if (y2 != y3):
+				print("y2=",y2,"  ", "y3=",y3)
+
+		print("\tAccuracy SK:%s" % accuracy_score(YTest, Y1))
+		print("\ttargetAcc SK: %s" % sum(Y1 == YTest))
+		print("\tAccuracy MY:%s" % accuracy_score(YTest, Y2))
+		print("\ttargetAcc MY: %s" % sum(Y2 == YTest))
 
 		print("Saving model to PKL on disk")
 		joblib.dump(clf, "text/forest_"+str(ntree)+".pkl")

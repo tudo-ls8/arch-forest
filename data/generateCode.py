@@ -224,18 +224,25 @@ def main(argv):
 			print("Please use arm or intel")
 			return
 
-	if len(argv) < 3:
-		if target == "intel":
-			setSize = 10
-		else:
-			setSize = 8
+	#if len(argv) < 3:
+	if target == "intel":
+		setSizes = [5,10,25,50]
+		budgetSizes = [16*1000, 32*1000, 64*1000]
+		#setSize = 10 # 5,10,25,50
+		#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
 	else:
-		setSize = int(argv[2])
+		setSizes = [5,8,20,40]
+		budgetSizes = [16*1000, 32*1000, 64*1000]
+			#setSize = 8 # 5,8,20,40
+			#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
+	# else:
+	# 	setSize = int(argv[2])
+	reps = 50 # 20
 
-	if len(argv) < 4:
-		reps = 20
-	else:
-		reps = argv[2]
+	# if len(argv) < 4:
+	# 	reps = 20
+	# else:
+	# 	reps = argv[2]
 
 	if not os.path.exists(basepath + "/cpp"):
 		os.makedirs(basepath + "/cpp")
@@ -276,32 +283,52 @@ def main(argv):
 			print("\tComputing target accuracy")
 			YPredicted_ = loadedForest.predict(X)
 			YPredictedSK = clf.predict(X)
-			targetAcc = sum(YPredictedSK == Y)
+			targetAcc = sum(YPredicted_ == Y)
 			print("\tAccuracy MY:%s" % accuracy_score(Y, YPredicted_))
 			print("\ttargetAcc MY: %s" % sum(YPredicted_ == Y))
 			print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
-			print("\ttargetAcc SK: %s" % targetAcc)
+			print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
 
 			featureType = getFeatureType(X)
 			dim = len(X[0])
 			numTest = len(X)
 			
+			Makefile = """COMPILER = {compiler}
+FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
+
+all:
+"""
 			print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
+			
+			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
+			for s in budgetSizes:
+				print("\tIf-Tree for budget", s)
 
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree", featureType, target, "path"))
-			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedPathIfTree", featureType, loadedForest, testname, reps)
+				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree_" + str(s), featureType, target, "path", s))
+				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 
-			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree", featureType, target, "node"))
-			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNodeIfTree", featureType, loadedForest, testname, reps)
+				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
+				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, testname, reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
+
+				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
+				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, testname, reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 
 			print("\tGenerating NativeTrees")
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
+			Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
 
-			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
-			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
+			for s in setSizes:
+				print("\tNative for set-size", s)
+
+				converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree_" + str(s), featureType, s))
+				generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 
 			# print("\tGenerating MixTrees")
 			# converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
@@ -312,16 +339,7 @@ def main(argv):
 			else:
 				compiler = "arm-linux-gnueabihf-g++"
 
-			Makefile = """COMPILER = {compiler}
-FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
-
-all:
-	$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree
-	$(COMPILER) $(FLAGS) OptimizedPathIfTree.h OptimizedPathIfTree.cpp testOptimizedPathIfTree.cpp -o testOptimizedPathIfTree
-	$(COMPILER) $(FLAGS) OptimizedNodeIfTree.h OptimizedNodeIfTree.cpp testOptimizedNodeIfTree.cpp -o testOptimizedNodeIfTree
-	$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree
-	$(COMPILER) $(FLAGS) OptimizedNativeTree.h OptimizedNativeTree.cpp testOptimizedNativeTree.cpp -o testOptimizedNativeTree
-			""".replace("{compiler}", compiler)
+			Makefile = Makefile.replace("{compiler}", compiler)
 
 			with open(cppPath + "/" + "Makefile",'w') as code_file:
 				code_file.write(Makefile)

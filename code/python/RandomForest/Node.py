@@ -96,16 +96,17 @@ class Node:
 		self.numSamples = int(json["numSamples"])
 
 		if "prediction" in json:
-			self.prediction = float(json["prediction"])
+			self.prediction = float(json["prediction"]) # TODO: Change to int and test it
 		else:
 			self.probLeft = float(json["probLeft"])
 			self.probRight = float(json["probRight"])
 			self.isCategorical = (json["isCategorical"] == "True")
 			self.feature = int(json["feature"])
-			try:
-				self.split = int(json["split"])
-			except ValueError:	
-				self.split = float(json["split"])
+			self.split = json["split"]
+			# if type(json["split"]) is int:
+			# try:
+			# 	self.split = int(json["split"])
+			# except ValueError:	
 			self.rightChild = json["rightChild"]["id"]
 			self.leftChild = json["leftChild"]["id"]
 
