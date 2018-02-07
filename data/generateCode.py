@@ -162,11 +162,11 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
 
-def generateClassifier(outPath, targetAcc, numClasses,converter, namespace, featureType, forest, testFile, reps):
+def generateClassifier(outPath, targetAcc, X,Y,converter, namespace, featureType, forest, testFile, reps):
 	# TODO: STORE NUM OF CLASSES IN TREE / FOREST ???
 	# 		THIS IS ONLY NEEDED FOR CLASSIFICATION!
 	#print("GETTING THE CODE")
-
+	numClasses = len(set(Y))
 	headerCode, cppCode = converter.getCode(forest,numClasses)
 	cppCode = "#include \"" + namespace + ".h\"\n" + cppCode
 	writeFiles(outPath, namespace, headerCode, cppCode)
@@ -279,24 +279,24 @@ def main(argv):
 			featureType = getFeatureType(X)
 			dim = len(X[0])
 			numTest = len(X)
-			numClasses = len(set(Y))
+			
 			print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, numClasses, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
 
 			converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedIfTree", featureType, target))
-			generateClassifier(cppPath + "/", targetAcc, numClasses, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedIfTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating NativeTrees")
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, numClasses, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
 
 			converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree", featureType, setSize))
-			generateClassifier(cppPath + "/", targetAcc, numClasses, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "OptimizedNativeTree", featureType, loadedForest, testname, reps)
 
 			print("\tGenerating MixTrees")
 			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
-			generateClassifier(cppPath + "/", targetAcc, numClasses, converter, "MixTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, testname, reps)
 
 			if target == "intel":
 				compiler = "g++"
