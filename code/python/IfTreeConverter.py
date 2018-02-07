@@ -101,8 +101,11 @@ class OptimizedIFTreeConverter(TreeConverter):
         curSize = 0
         # s = set([])
         # flag = False
-
+        print("start getAllLeafPaths")
         allPath = tree.getAllLeafPaths()
+        print("done getAllLeafPatgs")
+	
+        print("prepare paths")
         paths = []
         for p in allPath:
             prob = 1
@@ -112,8 +115,10 @@ class OptimizedIFTreeConverter(TreeConverter):
                 path.append(nid)
 
             paths.append((path,prob))
-
+        print("prepare done")
+        print("sort")
         paths = sorted(paths, key=lambda x:x[1], reverse=True)
+        print("sort done")
         #print("paths=",tmpPathes)
         #pathProbs, paths = tree.getProbAllPaths()
         
@@ -135,6 +140,7 @@ class OptimizedIFTreeConverter(TreeConverter):
             #     s.append(i)
         #print(len(s))
         #test = []
+        print("prepare kernel")
         for path in paths:
             for nodeid in path[0]:
                 if not nodeid in self.inKernel:
@@ -143,6 +149,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     else:
                         curSize += self.sizeOfNode(tree, tree.nodes[nodeid])
                         self.inKernel[nodeid] = True
+        print("kernel done")
         #print(tree.nodes[5].prediction)
         #print(tree.nodes[6].prediction)
         #print(test)
@@ -370,9 +377,9 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
-        #print("GET ALL PROBS")
+        print("\tGET ALL PROBS")
         tree.getProbAllPaths()
-        #print("DONE PROBS")
+        print("\tDONE PROBS")
 
         featureType = self.getFeatureType()
         cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
@@ -380,14 +387,14 @@ class OptimizedIFTreeConverter(TreeConverter):
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
-        #print("PATH SORT")
+        print("\tPATH SORT")
         self.pathSort(tree)
-        #print("PATH SORT DONE")
+        print("\tPATH SORT DONE")
 
         #self.nodeSort(tree)
-        #print("GET IMPL")
+        print("\tGET IMPL")
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
-        #print("GET IMPL DONE")
+        print("\tGET IMPL DONE")
 
         cppCode += output[0] #code
         cppCode += output[1] #label
