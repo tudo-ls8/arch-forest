@@ -344,17 +344,25 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
+        print("GET ALL PROBS")
         tree.getProbAllPaths()
+        print("DONE PROBS")
+
         featureType = self.getFeatureType()
         cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType)
-
+        print("PATH SORT")
         self.pathSort(tree)
+        print("PATH SORT DONE")
+
         #self.nodeSort(tree)
+        print("GET IMPL")
         output = self.getImplementation(tree, treeID, tree.head, 0, 0)
+        print("GET IMPL DONE")
+
         cppCode += output[0] #code
         cppCode += output[1] #label
         cppCode += "}\n"
