@@ -163,7 +163,7 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
 
-def generateClassifier(outPath, targetAcc, DIM, N, NUM_CLASSES,converter, namespace, featureType, forest, testFile, reps):
+def generateClassifier(outPath, targetAcc, DIM, N, numClasses,converter, namespace, featureType, forest, testFile, reps):
 	# TODO: STORE NUM OF CLASSES IN TREE / FOREST ???
 	# 		THIS IS ONLY NEEDED FOR CLASSIFICATION!
 	#print("GETTING THE CODE")
@@ -303,17 +303,19 @@ all:
 """
 			print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
+			print(sys.getsizeof(converter))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
-
+			print(sys.getsizeof(converter))
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
 			for s in budgetSizes:
 				print("\tIf-Tree for budget", s)
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree_" + str(s), featureType, target, "path", s))
+				print(sys.getsizeof(converter))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 				del converter
-
+				print(sys.getsizeof(converter))
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
