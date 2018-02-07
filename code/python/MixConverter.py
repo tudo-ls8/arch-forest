@@ -26,6 +26,25 @@ class MixConverter(TreeConverter):
                 return self.getNativeImplementation(head, treeID)
         def pathSort(self, tree):
             self.inKernel = {}
+            curSize = 0
+            s = []
+            flag = False
+            paths = sorted(self.getPaths(tree.head, [], []),key = lambda i: i[-1:])
+            #O(n^2) to clean up the duplicates
+            for i in paths:
+                if i not in s:
+                    s.append(i)
+            for path in s:
+                for node in path:
+                    try:
+                        if self.inKernel[node] == True:
+                            continue
+                    except KeyError:
+                        curSize += self.sizeOfNode(tree, tree.nodes[node])
+                    if curSize >= self.givenBudget:
+                        self.inKernel[node] = False
+                    else:
+                        self.inKernel[node] = True
 
         def nodeSort(self, tree):
             self.inKernel = {}

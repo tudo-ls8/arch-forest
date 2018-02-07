@@ -1,7 +1,6 @@
 from ForestConverter import TreeConverter
 import numpy as np
 import heapq
-from functools import reduce
 
 class StandardIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
