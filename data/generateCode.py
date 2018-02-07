@@ -163,13 +163,15 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 		code_file.write(testCode)
 
 def generateClassifier(outPath, X, Y, converter, namespace, featureType, forest, testFile, reps):
+	print("Getting accuracy")
 	YPredicted_ = forest.predict(X)
 	targetAcc = sum(YPredicted_ == Y)
-	#print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
+	print("Accuracy:%s" % accuracy_score(Y, YPredicted_))
 
 	# TODO: STORE NUM OF CLASSES IN TREE / FOREST ???
 	# 		THIS IS ONLY NEEDED FOR CLASSIFICATION!
 	numClasses = len(set(Y))
+	print("GETTING THE CODE")
 
 	headerCode, cppCode = converter.getCode(forest,numClasses)
 	cppCode = "#include \"" + namespace + ".h\"\n" + cppCode

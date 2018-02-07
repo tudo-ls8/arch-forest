@@ -25,6 +25,9 @@ def main(argv):
 	# NOTE: It seems, that SKLEarn produces an internal mapping from 0-(|Y| - 1) for classification
 	# 		For some reason I was not able to extract this mapping from SKLearn ?!?!
 	Y = Y-min(Y)
+	print(Y)
+	print(min(Y))
+	print(max(Y))
 	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
 
 	with open("test.csv", 'w') as outFile:
