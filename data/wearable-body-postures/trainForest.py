@@ -50,7 +50,6 @@ def readFile(path):
 
 	return np.array(X), np.array(Y)
 
-
 def main(argv):
 	data = "dataset-har-PUC-Rio-ugulino.csv"
 	outPath = "./text"
@@ -72,10 +71,12 @@ def main(argv):
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")
 		clf.fit(XTrain,YTrain)
-		
+
 		print("Testing model on " + str(len(XTest)) + " data points")
 		start = timeit.default_timer()
-		YPredicted = clf.predict(XTest)
+
+		for i in range(200):
+			YPredicted = clf.predict(XTest)
 		end = timeit.default_timer()
 		print("Confusion matrix:\n%s" % confusion_matrix(YTest, YPredicted))
 		print("Accuracy:%s" % accuracy_score(YTest, YPredicted))

@@ -39,7 +39,7 @@ def main(argv):
 		if f.endswith(".pkl"): 
 			#print("Loading model", f)
 			clf = joblib.load(basepath + "/text/" + f)
-
+			clf.n_jobs = 1
 			# Burn in phase
 			for i in range(2):
 				YPredicted = clf.predict(XTest)
