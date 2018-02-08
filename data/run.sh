@@ -16,11 +16,11 @@ fi
 #echo "$1/cpp/$2"
 
 for d in ./$1/cpp/$2/*/; do
-	sklearn=$(./runSKLearn $1)
-    echo $d
+	sklearn=$(./runSKLearn.py $1)
+    	echo $d
 	cd $d
 	if [ "$2" == "arm" ]; then
-		measurments="$d,$(sklearn),\
+		measurments="$d,$sklearn,\
 			$(./testStandardIfTree),$(stat --printf="%s" testStandardIfTree),\
 			$(./testOptimizedPathIfTree_32000),$(stat --printf="%s" testOptimizedPathIfTree_32000),\
 			$(./testOptimizedPathIfTree_64000),$(stat --printf="%s" testOptimizedPathIfTree_64000),\
@@ -28,7 +28,7 @@ for d in ./$1/cpp/$2/*/; do
 			$(./testOptimizedNativeTree_8),$(stat --printf="%s" testOptimizedNativeTree_8),\
 			$(./testOptimizedNativeTree_32),$(stat --printf="%s" testOptimizedNativeTree_32)"
 	else
-		measurments="$d,$(sklearn),\
+		measurments="$d,$sklearn,\
 			$(./testStandardIfTree),$(stat --printf="%s" testStandardIfTree),\
 			$(./testOptimizedPathIfTree_128000),$(stat --printf="%s" testOptimizedPathIfTree_128000),\
 			$(./testOptimizedPathIfTree_384000),$(stat --printf="%s" testOptimizedPathIfTree_384000),\

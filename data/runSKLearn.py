@@ -34,25 +34,48 @@ def main(argv):
 
 	#print("Reading test file")
 	XTest,YTest = readFile(basepath + "/test.csv")
-
+	
+	# Preparse fair testing data
+	maxn = min(len(XTest),10000)
+	indices = np.random.choice(len(XTest),maxn)	
+	XTest_ = []	
+	YTest_ = []
+	
+	for i in indices:
+		XTest_.append(np.expand_dims(XTest[i],axis=0))
+		YTest_.append(YTest[i])
+	
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith(".pkl"): 
 			#print("Loading model", f)
 			clf = joblib.load(basepath + "/text/" + f)
 			clf.n_jobs = 1
+			acc = 0
 			# Burn in phase
 			for i in range(2):
-				YPredicted = clf.predict(XTest)
+				for x,y in zip(XTest_,YTest_):
+					ypred = clf.predict(x)
+					if (ypred == y):
+                	                        acc += 1
 			
 			#print("Accuracy:%s" % accuracy_score(YTest, YPredicted))	
-	
-			# Actual measure
+				
+			# Actual measurement
 			runtimes = []
-			for i in range(20):
+			acc = 0
+			for i in range(5):
 				start = timeit.default_timer()
-				YPredicted = clf.predict(XTest)
+				for x,y in zip(XTest_,YTest_):
+					ypred = clf.predict(x)
+					if (ypred == y):
+						acc += 1
+				
+				# NOTE: Usually, one would call this method on all data-points. This enables SKLearn / python just in time compilation / the C-backend to utilize parallelsim due to multiple instances available. We do not want to compare against this, because in deployment we usally have one new observation after another which should be classified as fast as possible.
+				# NOTE 2: It is probably possible to buffer multiple instances in real applications. However, this sort of optimization is different from what we are looking into here
+				# Note 3: Interestringly, in most cases we are still factor 2-4 faster than SKLearn. Only when datasets get bigger, such as FACT, SKLearn can take full adavantage of having all datapoints available at a time.
+				#YPredicted = clf.predict(XTest)
 				end = timeit.default_timer()
-				runtimes.append((end-start)/len(XTest)*1000)
+				runtimes.append((end-start)/maxn*1000)
 
 			print(basepath+"/text/"+f,",",np.mean(runtimes),",",np.var(runtimes))			
 
