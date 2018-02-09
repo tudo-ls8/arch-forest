@@ -85,6 +85,113 @@ class NativeTreeConverter(TreeConverter):
 
             return headerCode, cppCode
 
+class NaiveNativeTreeConverter(NativeTreeConverter):
+    def __init__(self, dim, namespace, featureType):
+            super().__init__(dim, namespace, featureType)
+
+    def getHeader(self, splitType, treeID, arrLen):
+            dimBit = int(np.log2(self.dim)) + 1 if self.dim != 0 else 1
+
+            if dimBit <= 8:
+                    dimDataType = "unsigned char"
+            elif dimBit <= 16:
+                    dimDataType = "unsigned short"
+            else:
+                    dimDataType = "unsigned int"
+
+            featureType = self.getFeatureType()
+            headerCode = """struct {namespace}_Node{id} {
+                    bool isLeaf;
+                    unsigned int prediction;
+                    {dimDataType} feature;
+                    {splitType} split;
+                    {arrayLenDataType} leftChild;
+                    {arrayLenDataType} rightChild;
+            };\n""".replace("{namespace}", self.namespace) \
+                       .replace("{id}", str(treeID)) \
+                       .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) \
+                       .replace("{splitType}",splitType) \
+                       .replace("{dimDataType}",dimDataType)
+
+            headerCode += "inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
+                                            .replace("{id}", str(treeID)) \
+                                            .replace("{dim}", str(self.dim)) \
+                                            .replace("{namespace}", self.namespace) \
+                                            .replace("{feature_t}", featureType)
+
+            return headerCode
+
+    def getImplementation(self, head, treeID):
+            arrayStructs = []
+            nextIndexInArray = 1
+
+            # BFS part
+            nodes = [head]
+            while len(nodes) > 0:
+                node = nodes.pop(0)
+                entry = []
+
+                if node.prediction is not None:
+                    entry.append(1)
+                    entry.append(int(node.prediction))
+                    #entry.append(node.id)
+                    entry.append(0)
+                    entry.append(0)
+                    entry.append(0)
+                    entry.append(0)
+                else:
+                    entry.append(0)
+                    entry.append(0) # COnstant prediction
+                    entry.append(node.feature)
+                    entry.append(node.split)
+                    entry.append(nextIndexInArray)
+                    nextIndexInArray += 1
+                    entry.append(nextIndexInArray)
+                    nextIndexInArray += 1
+                    
+                    nodes.append(node.leftChild)
+                    nodes.append(node.rightChild)
+
+                arrayStructs.append(entry)
+
+            featureType = self.getFeatureType()
+            arrLen = len(arrayStructs)
+            # kh.chen
+            #print("Get ArrayLenType")
+            #print(self.getArrayLenType(len(arrayStructs)))
+
+            cppCode = "{namespace}_Node{id} const tree{id}[{N}] = {" \
+                    .replace("{id}", str(treeID)) \
+                    .replace("{N}", str(len(arrayStructs))) \
+                    .replace("{namespace}", self.namespace)
+
+            for e in arrayStructs:
+                    cppCode += "{"
+                    for val in e:
+                            cppCode += str(val) + ","
+                    cppCode = cppCode[:-1] + "},"
+            cppCode = cppCode[:-1] + "};"
+
+            cppCode += """
+                    inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+                            {arrayLenDataType} i = 0;
+                            while(!tree{id}[i].isLeaf) {
+                                    if (pX[tree{id}[i].feature] <= tree{id}[i].split){
+                                        i = tree{id}[i].leftChild;
+                                    } else {
+                                        i = tree{id}[i].rightChild;
+                                    }
+                            } 
+                            return tree{id}[i].prediction;
+                    }
+            """.replace("{id}", str(treeID)) \
+               .replace("{dim}", str(self.dim)) \
+               .replace("{namespace}", self.namespace) \
+               .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
+               .replace("{feature_t}", featureType)
+
+            return cppCode, arrLen
+
 class StandardNativeTreeConverter(NativeTreeConverter):
     def __init__(self, dim, namespace, featureType):
             super().__init__(dim, namespace, featureType)
