@@ -107,12 +107,14 @@ measurmentCodeTemplate = """
 
 	std::vector<float> runtimes;
 	std::vector<unsigned int> accuracies;
+	unsigned int pred;
 	for (unsigned int i = 0; i < {num_repetitions}; ++i) {
 		unsigned int acc = 0;
     	auto start = std::chrono::high_resolution_clock::now();
 		for (unsigned int j = 0; j < {N}; ++j) {
-			unsigned int pred = {namespace}_predict(&XTest[{DIM}*j]);
+			pred = {namespace}_predict(&XTest[{DIM}*j]);
 			acc += (pred == YTest[j]);
+			//acc += pred;
 		}
     	auto end = std::chrono::high_resolution_clock::now();
     	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

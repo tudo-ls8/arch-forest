@@ -45,7 +45,7 @@ class NativeTreeConverter(TreeConverter):
                        .replace("{splitType}",splitType) \
                        .replace("{dimDataType}",dimDataType)
 
-            headerCode += "unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
+            headerCode += "inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{id}", str(treeID)) \
                                             .replace("{dim}", str(self.dim)) \
                                             .replace("{namespace}", self.namespace) \
@@ -162,7 +162,7 @@ class StandardNativeTreeConverter(NativeTreeConverter):
             cppCode = cppCode[:-1] + "};"
 
             cppCode += """
-                    unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+                    inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
                             {arrayLenDataType} i = 0;
 
                             while(true) {
@@ -325,7 +325,7 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
         cppCode = cppCode[:-1] + "};"
 
         cppCode += """
-                unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+                inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
                             {arrayLenDataType} i = 0;
 
                             while(true) {
