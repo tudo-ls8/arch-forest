@@ -1,7 +1,7 @@
 #/bin/bash
 
-wget https://pjreddie.com/media/files/mnist_train.csv -o train.csv
-wget https://pjreddie.com/media/files/mnist_test.csv -o test.csv
+wget https://pjreddie.com/media/files/mnist_train.csv -O train.csv
+wget https://pjreddie.com/media/files/mnist_test.csv -O test.csv
 
 # wget http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
 # gunzip train-images-idx3-ubyte.gz
