@@ -44,6 +44,7 @@ void readCSV({feature_t} * XTest, unsigned int * YTest) {
     std::ifstream file("{test_file}");
     unsigned int xCnt = 0;
     unsigned int yCnt = 0;
+	unsigned int lineCnt = 0;
 
     if (file.is_open()) {
         while ( std::getline(file,line)) {
@@ -63,6 +64,10 @@ void readCSV({feature_t} * XTest, unsigned int * YTest) {
                     	}
                     }
                 }
+		lineCnt++;
+		if( lineCnt > {N} ) {
+			break;
+		}
             }
         }
         file.close();
