@@ -7,7 +7,7 @@ This repository contains the code for our KDD 2018 submission "PAPER TITLE HERE"
 
 First, clone the repo ``git clone git@bitbucket.org:sbuschjaeger/arch-forest.git``
 Then, change the folder ``cd arch-forest``
-Third, checkout the following tag ``git checkout tags/v1.0``
+Third, checkout the following tag ``git checkout tags/v1.1``
 
 Alternatively you can use the latest version of the code. However, I cannot guarantee that the latest version will run all the time. 
 
