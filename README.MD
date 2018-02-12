@@ -3,7 +3,7 @@
 
 ---
 
-This repository contains the code for our KDD 2018 submission "PAPER TITLE HERE". To reproduce the exact state of the experiments you can checkout the following tag:
+This repository contains the code for our KDD 2018 submission "Tending Your Garden - Realization of Random Forest for Real-Time Evaluation through Tree Framing". To reproduce the exact state of the experiments you can checkout the following tag:
 
 First, clone the repo ``git clone git@bitbucket.org:sbuschjaeger/arch-forest.git``
 Then, change the folder ``cd arch-forest``
