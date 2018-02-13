@@ -79,16 +79,17 @@ class ForestConverter:
 		cppCode += "	unsigned int predCnt[{num_classes}] = " + initCode
 		for i in range(len(forest.trees)):
 			cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
-		cppCode += """unsigned int pred = 0;
-				unsigned int cnt = predCnt[0];
-				for (unsigned int i = 1; i < {num_classes}; ++i) {
-					if (predCnt[i] > cnt) {
-						cnt = predCnt[i];
-						pred = i;
-					}
-				}
-				return pred;
-			}\n"""
+		cppCode += """
+    unsigned int pred = 0;
+    unsigned int cnt = predCnt[0];
+    for (unsigned int i = 1; i < {num_classes}; ++i) {
+            if (predCnt[i] > cnt) {
+                    cnt = predCnt[i];
+                    pred = i;
+            }
+    }
+    return pred;
+}\n"""
 		cppCode = cppCode.replace("{num_classes}", str(numClasses))
 
 		for i in range(len(forest.trees)):
