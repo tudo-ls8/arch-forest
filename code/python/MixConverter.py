@@ -5,7 +5,7 @@ import heapq
 class MixConverter(TreeConverter):
         """ A MixConverter converts a DecisionTree into its mixed structure in c language
         """
-        def __init__(self, dim, namespace, featureType, architecture):
+        def __init__(self, dim, namespace, featureType, architecture, orientation="path", budgetSize=32*1024):
                 super().__init__(dim, namespace, featureType)
                 #Generates a new mix-tree converter object
                 self.architecture = architecture
@@ -17,36 +17,54 @@ class MixConverter(TreeConverter):
                     if self.architecture == "arm":
                         self.setSize = 8
                     else:
-                        self.setSize = 10
+                        self.setSize = 25
                 self.inKernel = {}
-        # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-                self.givenBudget = 32*1000 # This was 32*500
+                self.givenBudget = budgetSize
+                self.orientation = orientation
+                if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap":
+                    raise NotImplementedError("Please use 'path' or 'node' or 'swap' for orientation")
 
         def getNativeBasis(self, head, treeID):
                 return self.getNativeImplementation(head, treeID)
         def pathSort(self, tree):
             self.inKernel = {}
             curSize = 0
-            s = []
-            flag = False
-            paths = sorted(self.getPaths(tree.head, [], []),key = lambda i: i[-1:])
-            #O(n^2) to clean up the duplicates
-            for i in paths:
-                if i not in s:
-                    s.append(i)
-            for path in s:
-                for node in path:
-                    try:
-                        if self.inKernel[node] == True:
-                            continue
-                    except KeyError:
-                        curSize += self.sizeOfNode(tree, tree.nodes[node])
-                    if curSize >= self.givenBudget:
-                        self.inKernel[node] = False
-                    else:
-                        self.inKernel[node] = True
+            allPath = tree.getAllLeafPaths()
+
+            paths = []
+            for p in allPath:
+                prob = 1
+                path = []
+                for (nid,nprob) in p:
+                    prob *= nprob
+                    path.append(nid)
+
+                paths.append((path,prob))
+            paths = sorted(paths, key=lambda x:x[1], reverse=True)
+
+
+            if self.containsFloat(tree):
+                splitDataType = "float"
+            else:
+                splitDataType = "int"
+
+            #print("prepare kernel")
+            for path in paths:
+                for nodeid in path[0]:
+                    if not nodeid in self.inKernel:
+                        if curSize >= self.givenBudget:
+                            self.inKernel[nodeid] = False
+                        else:
+                            curSize += self.sizeOfNode(tree, tree.nodes[nodeid], splitDataType)
+                            self.inKernel[nodeid] = True
+
 
         def nodeSort(self, tree):
+            if self.containsFloat(tree):
+                splitDataType = "float"
+            else:
+                splitDataType = "int"
+
             self.inKernel = {}
             curSize = 0
             L = []
@@ -63,19 +81,16 @@ class MixConverter(TreeConverter):
             # now L has BFS nodes sorted by probabilities
             while len(L) > 0:
                 node = heapq.heappop(L)
-                self.inKernel[node.id] = True
-                curSize += self.sizeOfNode(tree,node)
+                curSize += self.sizeOfNode(tree,node, splitDataType)
                 # if the current size is larger than budget already, break.
                 if curSize >= self.givenBudget:
                     self.inKernel[node.id] = False
-                    # in fact this can be avoided
+                else:
+                    self.inKernel[node.id] = True
 
-        def sizeOfNode(self, tree, node):
+
+        def sizeOfNode(self, tree, node, splitDataType):
             size = 0
-            if self.containsFloat(tree):
-                splitDataType = "float"
-            else:
-                splitDataType = "int"
 
             if node.prediction is not None:
                 if splitDataType == "int" and self.architecture == "arm":
@@ -87,10 +102,6 @@ class MixConverter(TreeConverter):
                 elif splitDataType == "float" and self.architecture == "intel":
                     size += 10
             else:
-                if self.containsFloat(tree):
-                    splitDataType = "float"
-                else:
-                    splitDataType = "int"
                 # In O0, the basic size of a split node is 4 instructions for loading.
                 # Since a split node must contain a pair of if-else statements,
                 # one instruction for branching is not avoidable.
@@ -133,17 +144,10 @@ class MixConverter(TreeConverter):
                                             .replace("{feature_t}", featureType)
             code = ""
             tabs = "".join(['\t' for i in range(level)])
-            # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
 
             # khchen: swap-algorithm + kernel grouping
             if head.prediction is not None:
-                    if self.inKernel[head.id] is False:
-                        #it must be in Kernel, otherwise we are in trouble.
-                        code += tabs + '\t' + "subroot = "+str(mapping[head.id])+";\n"
-                        code += tabs + '\t' + "goto Label"+str(treeID)+";\n"
-
-                    else:
-                        return (tabs + "return " + str(int(head.prediction)) + ";\n" )
+                    return (tabs + "return " + str(int(head.prediction)) + ";\n" )
             else:
                     # check if it is the moment to go out the kernel, set up the root id then goto the end of the while loop.
                     if self.inKernel[head.id] is False:
@@ -185,68 +189,67 @@ class MixConverter(TreeConverter):
                         cset.append(node)
                         entry = []
                         mapping[node.id] = len(arrayStructs)
+                        #if treeID == 0:
+                            #print(node.id)
 
                         if node.prediction is not None:
-                                entry.append(1)
-                                entry.append(int(node.prediction))
-                                entry.append(0)
-                                entry.append(0)
-                                entry.append(0)
-                                entry.append(0)
-                                arrayStructs.append(entry)
-
-                                if node.parent != -1:
-                                    # if this node is not root, it must be assigned with self.side
-                                    if node.side == 0:
-                                        arrayStructs[node.parent][4] = nextIndexInArray - 1
-                                    else:
-                                        arrayStructs[node.parent][5] = nextIndexInArray - 1
-
-
-                                nextIndexInArray += 1
-
-
-                                if len(L) != 0 and len(cset) != self.setSize:
-                                    node = heapq.heappop(L)
-                                else:
-                                    break
+                                continue
                         else:
-                                entry.append(0)
-                                entry.append(0) # COnstant prediction
-                                entry.append(node.feature)
-                                entry.append(node.split)
+                            entry.append(node.feature)
+                            entry.append(node.split)
 
+                            if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
+                                indicator = 3
+                                entry.append(int(node.leftChild.prediction))
+                                entry.append(int(node.rightChild.prediction))
+                            elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
+                                indicator = 2
+                                entry.append(-1)
                                 node.leftChild.parent = nextIndexInArray - 1
+
+                                entry.append(int(node.rightChild.prediction))
+                            elif (node.leftChild.prediction is not None) and (node.rightChild.prediction is  None):
+                                indicator = 1
+                                entry.append(int(node.leftChild.prediction))
+                                entry.append(-1)
                                 node.rightChild.parent = nextIndexInArray - 1
-
-                                if node.parent != -1:
-                                    # if this node is not root, it must be assigned with self.side
-                                    if node.side == 0:
-                                        arrayStructs[node.parent][4] = nextIndexInArray - 1
-                                    else:
-                                        arrayStructs[node.parent][5] = nextIndexInArray - 1
-
-                                # the following two fields now are modified by its children.
+                            else:
+                                indicator = 0
                                 entry.append(-1)
+                                node.leftChild.parent = nextIndexInArray - 1
                                 entry.append(-1)
-                                arrayStructs.append(entry)
-                                nextIndexInArray += 1
+                                node.rightChild.parent = nextIndexInArray - 1
+                            entry.append(indicator)
 
+                            # node.leftChild.parent = nextIndexInArray - 1
+                            # node.rightChild.parent = nextIndexInArray - 1
+                            if node.parent != -1:
+                                # if this node is not root, it must be assigned with self.side
+                                if node.side == 0:
+                                    arrayStructs[node.parent][2] = nextIndexInArray - 1
+                                else:
+                                    arrayStructs[node.parent][3] = nextIndexInArray - 1
 
-                                # note the sides of the children
-                                node.leftChild.side = 0
-                                node.rightChild.side = 1
+                            # the following two fields now are modified by its children.
+                            # entry.append(-1)
+                            # entry.append(-1)
+                            arrayStructs.append(entry)
+                            nextIndexInArray += 1
 
-                                if len(cset) != self.setSize:
-                                    if node.leftChild.pathProb >= node.rightChild.pathProb:
-                                        heapq.heappush(L, node.rightChild)
-                                        node = node.leftChild
-                                    else:
-                                        heapq.heappush(L, node.leftChild)
-                                        node = node.rightChild
+                            # note the sides of the children
+                            node.leftChild.side = 0
+                            node.rightChild.side = 1
+
+                            if len(cset) != self.setSize:
+                                if node.leftChild.pathProb >= node.rightChild.pathProb:
+                                    heapq.heappush(L, node.rightChild)
+                                    node = node.leftChild
                                 else:
                                     heapq.heappush(L, node.leftChild)
-                                    heapq.heappush(L, node.rightChild)
+                                    node = node.rightChild
+                            else:
+                                heapq.heappush(L, node.leftChild)
+                                heapq.heappush(L, node.rightChild)
 
             featureType = self.getFeatureType()
             arrLen = len(arrayStructs)
@@ -262,6 +265,8 @@ class MixConverter(TreeConverter):
                             cppCode += str(val) + ","
                     cppCode = cppCode[:-1] + "},"
             cppCode = cppCode[:-1] + "};"
+            #if treeID ==0:
+                #print(arrayStructs)
 
             return cppCode, arrLen, mapping
 
@@ -292,12 +297,11 @@ class MixConverter(TreeConverter):
 
                 featureType = self.getFeatureType()
                 headerCode = """struct {namespace}_Node{id} {
-                        bool isLeaf;
-                        unsigned int prediction;
                         {dimDataType} feature;
                         {splitType} split;
                         {arrayLenDataType} leftChild;
                         {arrayLenDataType} rightChild;
+                        unsigned char indicator;
 
                 };\n""".replace("{namespace}", self.namespace) \
                            .replace("{id}", str(treeID)) \
@@ -327,14 +331,15 @@ class MixConverter(TreeConverter):
             """
             tree.getProbAllPaths()
             featureType = self.getFeatureType()
-            cppCode = "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
+            nativeImplementation = self.getNativeImplementation(tree.head, treeID)
+            cppCode = ""
+            cppCode += nativeImplementation[0]+ "\n"
+            cppCode += "unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
                                     .replace("{treeID}", str(treeID)) \
                                     .replace("{dim}", str(self.dim)) \
                                     .replace("{namespace}", self.namespace) \
                                     .replace("{feature_t}", featureType)
-            cppCode += "unsigned int subroot;\n"
-            nativeImplementation = self.getNativeImplementation(tree.head, treeID)
-            cppCode += nativeImplementation[0]+ "\n"
+            cppCode += "\t unsigned int subroot;\n"
             arrLen = nativeImplementation[1]
             mapping = nativeImplementation[2]
 
@@ -345,22 +350,32 @@ class MixConverter(TreeConverter):
 
             # Data Array
             cppCode += """
-                    Label{id}:
-                    {
-                            {arrayLenDataType} i = subroot;
+Label{id}:
+{
+        {arrayLenDataType} i = subroot;
 
-                            while(!tree{id}[i].isLeaf) {
-                                    if (pX[tree{id}[i].feature] <= tree{id}[i].split){
-                                            i = tree{id}[i].leftChild;
-                                    } else {
-                                            i = tree{id}[i].rightChild;
-                                    }
-                            }
-
-                            return tree{id}[i].prediction;
-                    }
-            """.replace("{id}", str(treeID)) \
-               .replace("{arrayLenDataType}",self.getArrayLenType(arrLen))
+        while(true) {
+            if (pX[tree{id}[i].feature] <= tree{id}[i].split){
+                if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 2) {
+                    i = tree{id}[i].leftChild;
+                } else {
+                    return tree{id}[i].leftChild;
+                }
+            } else {
+                if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 1) {
+                    i = tree{id}[i].rightChild;
+                } else {
+                    return tree{id}[i].rightChild;
+                }
+            }
+        }
+        return 0; // Make the compiler happy
+}
+        """.replace("{id}", str(treeID)) \
+           .replace("{dim}", str(self.dim)) \
+           .replace("{namespace}", self.namespace) \
+           .replace("{arrayLenDataType}",self.getArrayLenType(arrLen)) \
+           .replace("{feature_t}", featureType)
 
             cppCode += "}\n"
 

@@ -236,12 +236,15 @@ def main(argv):
 	#if len(argv) < 3:
 	if target == "intel":
 		setSizes = [25]
-		budgetSizes = [128*1000, 384*1000]
+		#budgetSizes = [128*1000, 384*1000]
+		budgetSizes = [128*1024]
 		#setSize = 10 # 5,10,25,50
 		#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
 	else:
-		setSizes = [8,32]
-		budgetSizes = [32*1000, 64*1000]
+		#setSizes = [8,32]
+		setSizes = [8]
+		#budgetSizes = [32*1000, 64*1000]
+		budgetSizes = [32*1024]
 			#setSize = 8 # 5,8,20,40
 			#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
 	# else:
@@ -296,7 +299,7 @@ def main(argv):
 			print("\ttargetAcc: %s" % sum(YPredictedSK == Y))
 			#print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
 			#print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
-			
+
 
 			featureType = getFeatureType(X)
 			dim = len(X[0])
@@ -347,9 +350,10 @@ all:
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 
-			# print("\tGenerating MixTrees")
-			#converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
-			#generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, testname, reps)
+			print("\tGenerating MixTrees")
+			converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "MixTree", featureType, loadedForest, testname, reps)
+			Makefile += "\t$(COMPILER) $(FLAGS) MixTree.h" + " MixTree.cpp testMixTree.cpp -o testMixTree\n"
 
 			if target == "intel":
 				compiler = "g++"
