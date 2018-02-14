@@ -325,6 +325,11 @@ all:
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 
+                                converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSubPathIfTree_" + str(s), featureType, target, "subpath", s))
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedSubPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSubPathIfTree_" + str(s)+".h" + " OptimizedSubPathIfTree_" + str(s)+".cpp testOptimizedSubPathIfTree_" + str(s)+".cpp -o testOptimizedSubPathIfTree_" + str(s) + "\n"
+
+
 			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
 			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, testname, reps)
 			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
