@@ -82,8 +82,8 @@ class OptimizedIFTreeConverter(TreeConverter):
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         self.givenBudget = budgetSize
         self.orientation = orientation
-        if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap":
-            raise NotImplementedError("Please use 'path' or 'node' or 'swap' for orientation")
+        if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap" and self.orientation != "subpath":
+            raise NotImplementedError("Please use 'path' or 'node' or 'swap' or 'subpath' for orientation")
 
     # SORT ALL SUB PATH ACCORIDNG THEIR PROBABILITY
     def subPathSort(self, tree):
@@ -107,7 +107,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
             paths.append((path,prob))
         paths = sorted(paths, key=lambda x:x[1], reverse=True)
-            if self.containsFloat(tree):
+        if self.containsFloat(tree):
             splitDataType = "float"
         else:
             splitDataType = "int"
@@ -144,7 +144,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
             paths.append((path,prob))
         paths = sorted(paths, key=lambda x:x[1], reverse=True)
-            if self.containsFloat(tree):
+        if self.containsFloat(tree):
             splitDataType = "float"
         else:
             splitDataType = "int"
