@@ -68,28 +68,38 @@ class ForestConverter:
 		namespace = self.treeConverter.getNamespace()
 		featureType = self.treeConverter.getFeatureType()
 
-		headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
-		cppCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
+		# headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
+		# cppCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 
-		initCode = "{"
-		for i in range(0,numClasses):
-			initCode += "0,"
-		initCode = initCode[:-1] + "};\n"
+		headerCode = "float {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
+		cppCode = "float {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
+		cppCode += "float pred = 0.0f;"
 
-		cppCode += "	unsigned int predCnt[{num_classes}] = " + initCode
+		# TODO: IF BOOSTED FOREST; THEN WE JUST ADD PREDICTIONS. NO MAJORITY VOTE
 		for i in range(len(forest.trees)):
-			cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
-		cppCode += """unsigned int pred = 0;
-				unsigned int cnt = predCnt[0];
-				for (unsigned int i = 1; i < {num_classes}; ++i) {
-					if (predCnt[i] > cnt) {
-						cnt = predCnt[i];
-						pred = i;
-					}
-				}
-				return pred;
-			}\n"""
-		cppCode = cppCode.replace("{num_classes}", str(numClasses))
+			cppCode += "pred += {namespace}_predict{id}(pX);\n".replace("{id}", str(i)).replace("{namespace}", namespace)
+		cppCode += "return 1.0f/{num_trees} * pred;".replace("{num_trees}", str(len(forest.trees)))
+		cppCode += "}"
+
+		# initCode = "{"
+		# for i in range(0,numClasses):
+		# 	initCode += "0,"
+		# initCode = initCode[:-1] + "};\n"
+
+		# cppCode += "	unsigned int predCnt[{num_classes}] = " + initCode
+		# for i in range(len(forest.trees)):
+		# 	cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
+		# cppCode += """unsigned int pred = 0;
+		# 		unsigned int cnt = predCnt[0];
+		# 		for (unsigned int i = 1; i < {num_classes}; ++i) {
+		# 			if (predCnt[i] > cnt) {
+		# 				cnt = predCnt[i];
+		# 				pred = i;
+		# 			}
+		# 		}
+		# 		return pred;
+		# 	}\n"""
+		# cppCode = cppCode.replace("{num_classes}", str(numClasses))
 
 		for i in range(len(forest.trees)):
 			tHeader, tCode = self.treeConverter.getCode(forest.trees[i], i)

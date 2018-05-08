@@ -67,7 +67,8 @@ class Node:
 		    Node: An node representing the given (internal) sci-kit node
 		"""
 		self.numSamples = int(tree.n_node_samples[curNode])
-
+		# TODO: IF BOOSTED NODE THEN INCORPORATE WEIGHTING HERE
+		
 		if tree.children_left[curNode] == _tree.TREE_LEAF and tree.children_right[curNode] == _tree.TREE_LEAF:
 			# NOTE: For standard Decision Trees, the value field contains the standard prediction values (absolute numbers)
 			# 		For Random Forests, these values are weightes and thus need to be normalized
@@ -75,8 +76,12 @@ class Node:
 				value = tree.value[curNode][0, :]
 			else:
 				value = tree.value[curNode]
-			value = value / tree.weighted_n_node_samples[curNode]
-			self.prediction = classes[np.argmax(value)]
+
+			if classes is None:
+				self.prediction = value[0]
+			else:
+				value = value / tree.weighted_n_node_samples[curNode]
+				self.prediction = classes[np.argmax(value)]
 		else:
 			self.feature = tree.feature[curNode]
 

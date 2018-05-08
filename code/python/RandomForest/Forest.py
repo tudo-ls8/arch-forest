@@ -9,6 +9,8 @@ class Forest:
 		self.trees = []
 
 	def fromSKLearn(self,forest,roundSplit = False):
+		# TODO: ADD CHECK IF THIS IS A BOOSTED FOREST AND ADD (CORRECT) WEIGHTING TO IT
+
 		for e in forest.estimators_:
 			tree = self.generateTree()
 			tree.fromSKLearn(e,roundSplit)
@@ -60,6 +62,9 @@ class Forest:
 
 	def getAvgDepth(self):
 		return sum([t.getAvgDepth() for t in self.trees]) / len(self.trees)
+
+	def getTotalNumNodes(self):
+		return sum([t.getNumNodes() for t in self.trees])
 
 	# def getMaxDepth(self):
 	# 	return sum([t.getMaxDepth() for t in self.trees]) / len(self.trees)

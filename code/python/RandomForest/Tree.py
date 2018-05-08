@@ -286,6 +286,9 @@ class Tree():
 		
 		return allPaths
 
+	def getNumNodes(self):
+		return len(self.nodes)
+
 	# def getMaxProb(self, top_n = 1):
 	# 	paths = self.getAllPaths()
 	# 	probs = [reduce(lambda x, y: x*y, path) for path in paths]

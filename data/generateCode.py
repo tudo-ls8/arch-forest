@@ -259,6 +259,15 @@ def main(argv):
 	if not os.path.exists(basepath + "/cpp/" + target):
 		os.makedirs(basepath + "/cpp/" + target)
 
+	# for f in sorted(os.listdir(basepath + "/text/")):
+	# 	if f.endswith(".json"):
+	# 		print("\tLoading forest")
+	# 		forestPath = basepath + "/text/" + f
+	# 		loadedForest = RandomForest.RandomForestClassifier(None)
+	# 		loadedForest.fromJSON(forestPath)
+	# 		print("Total num nodes for ", f, " : ", loadedForest.getTotalNumNodes())
+	# return
+
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith(".json"):
 			name = f.replace(".json","")

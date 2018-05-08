@@ -43,7 +43,7 @@ def main(argv):
 
 	outPath = "./text"
 
-	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
+	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25,shuffle=False)
 	
 	with open("test.csv", 'w') as outFile:
 		for x,y in zip(XTest, YTest):
