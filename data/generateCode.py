@@ -223,14 +223,14 @@ def main(argv):
                 basepath = argv[0].strip("/")
 
         if len(argv) < 2:
-                print("Please give a target architecture (arm or intel)")
+                print("Please give a target architecture (arm, ppc or intel)")
                 return
         else:
                 target = argv[1]
 
-                if (target != "intel" and target != "arm"):
+                if (target != "intel" and target != "ppc" and target != "arm"):
                         print("Did not recognize architecture, ", target)
-                        print("Please use arm or intel")
+                        print("Please use arm, ppc or intel")
                         return
 
         #if len(argv) < 3:
@@ -240,6 +240,13 @@ def main(argv):
                 budgetSizes = [128*1024]
                 #setSize = 10 # 5,10,25,50
                 #budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
+        elif target == "ppc":
+                #setSizes = [8,32]
+                setSizes = [8]
+                #budgetSizes = [32*1000, 64*1000]
+                budgetSizes = [32*1024]
+                        #setSize = 8 # 5,8,20,40
+                        #budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
         else:
                 #setSizes = [8,32]
                 setSizes = [8]
@@ -362,6 +369,8 @@ all:
 
                         if target == "intel":
                                 compiler = "g++"
+                        elif target == "ppc":
+                                compiler = "powerpc-fsl-linux-g++ -m32 -mhard-float -mcpu=e6500 --sysroot=/opt/fsl-qoriq/2.0/sysroots/ppce6500-fsl-linux"
                         else:
                                 compiler = "arm-linux-gnueabihf-g++"
 

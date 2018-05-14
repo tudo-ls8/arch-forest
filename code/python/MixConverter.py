@@ -11,8 +11,8 @@ class MixConverter(TreeConverter):
                 self.architecture = architecture
                 self.arrayLenBit = 0
 
-                if self.architecture != "arm" and self.architecture != "intel":
-                    raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+                if self.architecture != "arm" and  self.architecture != "ppc" and self.architecture != "intel":
+                    raise NotImplementedError("Please use 'arm', 'ppc' or 'intel' as target architecture - other architectures are not supported")
                 else:
                     if self.architecture == "arm":
                         self.setSize = 8
@@ -97,6 +97,10 @@ class MixConverter(TreeConverter):
                     size += 2*4
                 elif splitDataType == "float" and self.architecture == "arm":
                     size += 2*4
+                elif splitDataType == "int" and self.architecture == "ppc":
+                    size += 2*4
+                elif splitDataType == "float" and self.architecture == "ppc":
+                    size += 2*4
                 elif splitDataType == "int" and self.architecture == "intel":
                     size += 10
                 elif splitDataType == "float" and self.architecture == "intel":
@@ -111,6 +115,12 @@ class MixConverter(TreeConverter):
                 elif splitDataType == "float" and self.architecture == "arm":
                     # this is for arm float
                     size += 8*4
+                elif splitDataType == "int" and self.architecture == "ppc":
+                    # this is for ppc int
+                    size += 8*4
+                elif splitDataType == "float" and self.architecture == "ppc":
+                    # this is for ppc float
+                    size += 8*4
                 elif splitDataType == "int" and self.architecture == "intel":
                     # this is for intel integer (bytes)
                     size += 28
@@ -123,6 +133,7 @@ class MixConverter(TreeConverter):
         def getIFImplementation(self, tree, treeID, head, mapping, level = 1):
         #def getIFImplementation(self, tree, treeID, head, inSize, mapping, level = 1):
             # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
+            # PPC is not decided yet.
 
             """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
 

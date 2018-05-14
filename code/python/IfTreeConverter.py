@@ -76,8 +76,8 @@ class OptimizedIFTreeConverter(TreeConverter):
     def __init__(self, dim, namespace, featureType, architecture, orientation="path", budgetSize=32*1000):
         super().__init__(dim, namespace, featureType)
         self.architecture = architecture
-        if self.architecture != "arm" and self.architecture != "intel":
-           raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+        if self.architecture != "arm" and self.architecture != "ppc" and self.architecture != "intel":
+           raise NotImplementedError("Please use 'arm', 'ppc' or 'intel' as target architecture - other architectures are not supported")
         self.inKernel = {}
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         self.givenBudget = budgetSize
@@ -197,6 +197,10 @@ class OptimizedIFTreeConverter(TreeConverter):
                 size += 2*4
             elif splitDataType == "float" and self.architecture == "arm":
                 size += 2*4
+            elif splitDataType == "int" and self.architecture == "ppc":
+                size += 2*4
+            elif splitDataType == "float" and self.architecture == "ppc":
+                size += 2*4
             elif splitDataType == "int" and self.architecture == "intel":
                 size += 10
             elif splitDataType == "float" and self.architecture == "intel":
@@ -210,6 +214,12 @@ class OptimizedIFTreeConverter(TreeConverter):
                 size += 5*4
             elif splitDataType == "float" and self.architecture == "arm":
                 # this is for arm float
+                size += 8*4
+            elif splitDataType == "int" and self.architecture == "ppc":
+                # this is for ppc int
+                size += 5*4
+            elif splitDataType == "float" and self.architecture == "ppc":
+                # this is for ppc float
                 size += 8*4
             elif splitDataType == "int" and self.architecture == "intel":
                 # this is for intel integer (bytes)
@@ -260,6 +270,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
     def getImplementation(self, tree, treeID, head, inIdx, level = 1):
         # NOTE: USE self.setSize for INTEL / ARM sepcific set-size parameter (e.g. 3 or 6)
+        # PPC requires to be checked again.
         # Node oriented.
 
         """ Generate the actual if-else implementation for a given node with Swapping and Kernel Grouping
