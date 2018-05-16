@@ -15,8 +15,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.externals import joblib
 
-sys.path.append('../../code/python')
-from RandomForest import RandomForest
+# sys.path.append('../../code/python')
+# from RandomForest import RandomForest
 
 def readFile(path):
 	f = open(path, 'r')
@@ -113,8 +113,9 @@ def main(argv):
 		# trainModel(model, "GBTrees_depth_2_"+str(ntree), XTrain, YTrain, XTest, YTest)
 
 		print("Boosting depth 1")
-		base = tree.DecisionTreeClassifier(max_depth=1)
-		model = AdaBoostClassifier(base_estimator=base,n_estimators=5)
+		#base = tree.DecisionTreeClassifier(max_depth=1)
+		base = RandomForestClassifier(n_estimators=200,n_jobs=4,max_depth=8)
+		model = AdaBoostClassifier(base_estimator=base,n_estimators=10)
 		trainModel(model, "GBTrees_depth_4_"+str(ntree), XTrain, YTrain, XTest, YTest)
 		print(model.estimator_weights_)
 		print(dir(model))
