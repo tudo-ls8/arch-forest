@@ -367,6 +367,14 @@ all:
                         generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "MixTree", featureType, loadedForest, testname, reps)
                         Makefile += "\t$(COMPILER) $(FLAGS) MixTree.h" + " MixTree.cpp testMixTree.cpp -o testMixTree\n"
 
+
+                        print("\tGenerating OptimizedNativeForest")
+                        for s in setSizes:
+                            converter = OptimizedNativeForestConverter(OptimizedNativeTreeConverterForest(dim, "OptimizedNativeForest_" + str(s), featureType, s))
+                            generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNativeForest_" + str(s), featureType, loadedForest, testname, reps)
+                            Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeForest_" + str(s)+".h" + " OptimizedNativeForest_" + str(s)+".cpp testOptimizedNativeForest_" + str(s)+".cpp -o testOptimizedNativeForest_" + str(s) + "\n"
+
+
                         if target == "intel":
                                 compiler = "g++"
                         elif target == "ppc":
