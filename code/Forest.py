@@ -86,23 +86,34 @@ class Forest:
 		return sum([t.getNumNodes() for t in self.trees])
 
 	def predict(self,x):
-		nodeID = None
-
 		pred = None
 		i = 0
 		for t in self.trees:
-			#print("prediction: ", t.predict(x))
 			i += 1
 			if pred is None:
-				nodeID, pred = t.predict(x)
+				pred = t.predict(x)
 			else:
-				unused, tmp = t.predict(x) #pred
+				tmp = t.predict(x) 
 				pred += tmp
 
-		#print("sum of predictions = ", pred)
-		#print("")
+		return pred
 
-		return nodeID, pred
+	def predict_batch(self,X):
+		YPred = []
+		for x in X:
+			pred = None
+			i = 0
+			for t in self.trees:
+				i += 1
+				if pred is None:
+					pred = t.predict(x)
+				else:
+					tmp = t.predict(x) 
+					pred += tmp
+			YPred.append(pred.argmax())			
+
+		return YPred
+
 
 	# def getMaxDepth(self):
 	# 	return sum([t.getMaxDepth() for t in self.trees]) / len(self.trees)

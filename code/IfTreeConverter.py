@@ -21,18 +21,21 @@ class StandardIFTreeConverter(TreeConverter):
         Returns:
             String: The actual if-else code as a string
         """
-        featureType = self.getFeatureType()
-        headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
-                                        .replace("{treeID}", str(treeID)) \
-                                        .replace("{dim}", str(self.dim)) \
-                                        .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType)
+        # featureType = self.getFeatureType()
+        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
+        #                                 .replace("{treeID}", str(treeID)) \
+        #                                 .replace("{dim}", str(self.dim)) \
+        #                                 .replace("{namespace}", self.namespace) \
+        #                                 .replace("{feature_t}", featureType)
         code = ""
         tabs = "".join(['\t' for i in range(level)])
 
         if head.prediction is not None:
+            for i in range(len(head.prediction)):
+                code += tabs + "pred[" + str(i) + "] += " + head.prediction[i] + ";\n"
+
             #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
-            return tabs + "return " + str(float(head.prediction)) + ";\n" ;
+            #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
                 code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                 code += self.getImplementation(treeID, head.leftChild, level + 1)
@@ -54,20 +57,23 @@ class StandardIFTreeConverter(TreeConverter):
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
         featureType = self.getFeatureType()
-        cppCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
+        cppCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
-                                .replace("{feature_t}", featureType)
+                                .replace("{feature_t}", featureType) \
+                                .replace("{classes}", numClasses)
 
         cppCode += self.getImplementation(treeID, tree.head)
         cppCode += "}\n"
 
-        headerCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+        headerCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
                                         .replace("{dim}", str(self.dim)) \
                                         .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType)
+                                        .replace("{feature_t}", featureType) \
+                                        .replace("{classes}", numClasses) 
+
 
         return headerCode, cppCode
 
@@ -244,19 +250,21 @@ class OptimizedIFTreeConverter(TreeConverter):
         Returns:
             String: The actual if-else code as a string
         """
-        featureType = self.getFeatureType()
-        headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
-                                        .replace("{treeID}", str(treeID)) \
-                                        .replace("{dim}", str(self.dim)) \
-                                        .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType)
+        # featureType = self.getFeatureType()
+        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+        #                                 .replace("{treeID}", str(treeID)) \
+        #                                 .replace("{dim}", str(self.dim)) \
+        #                                 .replace("{namespace}", self.namespace) \
+        #                                 .replace("{feature_t}", featureType)
         code = ""
         tabs = "".join(['\t' for i in range(level)])
 
         # khchen: swap-algorithm
         if head.prediction is not None:
+             for i in range(len(head.prediction)):
+                code += tabs + "pred[" + str(i) + "] += " + head.prediction[i] + ";\n"
                 #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
-                return tabs + "return " + str(float(head.prediction)) + ";\n" ;
+                #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
                 if head.probLeft >= head.probRight:
                         code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
@@ -290,13 +298,14 @@ class OptimizedIFTreeConverter(TreeConverter):
         Returns:
             Tuple: The string of if-else code, the string of label if-else code, generated code size and Final label index
         """
-        featureType = self.getFeatureType()
-        headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}]);\n" \
-                                        .replace("{treeID}", str(treeID)) \
-                                        .replace("{dim}", str(self.dim)) \
-                                        .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType)
-        code = ""
+        # featureType = self.getFeatureType()
+        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
+        #                                 .replace("{treeID}", str(treeID)) \
+        #                                 .replace("{dim}", str(self.dim)) \
+        #                                 .replace("{namespace}", self.namespace) \
+        #                                 .replace("{feature_t}", featureType) \
+        #                                 .replace("{numClasses}", str(numClasses))
+        code = ""   
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
         labelIdx = inIdx
@@ -429,11 +438,12 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("\tDONE PROBS")
 
         featureType = self.getFeatureType()
-        cppCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
+        cppCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
-                                .replace("{feature_t}", featureType)
+                                .replace("{feature_t}", featureType) \
+                                .replace("{numClasses}", str(numClasses))
         #print("PATH SORT")
         #self.pathSort(tree)
         #print("PATH SORT DONE")
@@ -463,10 +473,11 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         cppCode += "}\n"
 
-        headerCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+        headerCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
                                         .replace("{dim}", str(self.dim)) \
                                         .replace("{namespace}", self.namespace) \
                                         .replace("{feature_t}", featureType)
+                                        .replace("{numClasses}", str(numClasses))
 
         return headerCode, cppCode

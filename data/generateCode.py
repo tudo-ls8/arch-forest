@@ -16,12 +16,11 @@ from sklearn.tree import _tree
 import timeit
 from sklearn.externals import joblib
 
-sys.path.append('../code/python')
-
 import sys
 sys.setrecursionlimit(20000)
+sys.path.append('../code/')
 
-from RandomForest import RandomForest
+import Forest
 from ForestConverter import *
 from NativeTreeConverter import *
 from IfTreeConverter import *
@@ -64,10 +63,10 @@ void readCSV({feature_t} * XTest, unsigned int * YTest) {
                     	}
                     }
                 }
-		lineCnt++;
-		if( lineCnt > {N} ) {
-			break;
-		}
+				lineCnt++;
+				if( lineCnt > {N} ) {
+					break;
+				}
             }
         }
         file.close();
@@ -105,12 +104,12 @@ measurmentCodeTemplate = """
 
 		// SKLearn uses a weighted majority vote, whereas we use a "normal" majority vote
 		// Therefore, we may not match the accuracy of SKlearn perfectly!
-		/*if (acc != {target_acc}) {
+		if (acc != {target_acc}) {
 			std :: cout << "Target accuracy was not met!" << std :: endl;
 			std :: cout << "\t target: {target_acc}" << std :: endl;
 			std :: cout << "\t current:" << acc << std :: endl;
 			//return 1;
-		}*/
+		}
 	}
 
 	std::vector<float> runtimes;
@@ -259,15 +258,6 @@ def main(argv):
 	if not os.path.exists(basepath + "/cpp/" + target):
 		os.makedirs(basepath + "/cpp/" + target)
 
-	# for f in sorted(os.listdir(basepath + "/text/")):
-	# 	if f.endswith(".json"):
-	# 		print("\tLoading forest")
-	# 		forestPath = basepath + "/text/" + f
-	# 		loadedForest = RandomForest.RandomForestClassifier(None)
-	# 		loadedForest.fromJSON(forestPath)
-	# 		print("Total num nodes for ", f, " : ", loadedForest.getTotalNumNodes())
-	# return
-
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith(".json"):
 			name = f.replace(".json","")
@@ -280,18 +270,10 @@ def main(argv):
 			forestPath = basepath + "/text/" + f
 
 			print("\tLoading forest")
-			loadedForest = RandomForest.RandomForestClassifier(None)
+
+			loadedForest = Forest.Forest()
 			loadedForest.fromJSON(forestPath)
-			if basepath == "synthetic-chain":
-				print(basepath+"/text/"+name+"_test.csv")
-				testname = "../../../text/" + name + "_test.csv"
-				data = np.genfromtxt(basepath + "/text/" + name + "_test.csv", delimiter = ",")
-				reps = 500
-			else:
-				# if basepath == "wearable-body-postures":
-				# 	reps = 300
-				testname = "../../../test.csv"
-				data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
+			data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
 
 			X = data[:,1:]
 			Y = data[:,0]
@@ -305,11 +287,13 @@ def main(argv):
 			print("\ttargetAcc: %s" % sum(YPredictedSK == Y))
 			#print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
 			#print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
-			
 
 			featureType = getFeatureType(X)
 			dim = len(X[0])
-			numTest = min(len(X),10000)
+			if target == "arm":
+				numTest = min(len(X),10000)
+			else:
+				numTest = len(X)
 			numClasses = len(set(Y))
 
 			# RESET the memory
@@ -322,31 +306,31 @@ all:
 """
 			# print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
 			for s in budgetSizes:
 				print("\tIf-Tree for budget", s)
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree_" + str(s), featureType, target, "path", s))
-				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, testname, reps)
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 
 			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
-			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, testname, reps)
+			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
 
 			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
-			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, testname, reps)
+			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 
 			print("\tGenerating NativeTrees")
 
 			converter = ForestConverter(NaiveNativeTreeConverter(dim, "NaiveNativeTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "NaiveNativeTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "NaiveNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) NaiveNativeTree.h NaiveNativeTree.cpp testNaiveNativeTree.cpp -o testNaiveNativeTree\n"
 
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
 
 			for s in setSizes:
@@ -358,7 +342,7 @@ all:
 
 			# print("\tGenerating MixTrees")
 			#converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
-			#generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, testname, reps)
+			#generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, "../../../test.csv", reps)
 
 			if target == "intel":
 				compiler = "g++"

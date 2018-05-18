@@ -101,7 +101,7 @@ class Node:
 		self.numSamples = int(json["numSamples"])
 
 		if "prediction" in json:
-			self.prediction = float(json["prediction"]) # TODO: Change to int and test it
+			self.prediction = json["prediction"]
 		else:
 			self.probLeft = float(json["probLeft"])
 			self.probRight = float(json["probRight"])

@@ -71,6 +71,10 @@ class Tree():
 			rightChilds = self.str(head.rightChild)
 			s = head.str(leftChilds, rightChilds)
 			return s
+	
+	def pstr(self):
+		parsed = json.loads(self.str())
+		return json.dumps(parsed, indent=4)
 
 	## SOME STATISTICS FUNCTIONS ##
 	def getSubTree(self, minProb, maxNumNodes):
@@ -188,10 +192,8 @@ class Tree():
 
 	def predict(self,x):
 		curNode = self.head
-		path = []
 
 		while(curNode.prediction is None):
-			path.append((curNode.id, str(x[curNode.feature]) + "<=" + str(curNode.split), x[curNode.feature] <= curNode.split))
 
 			if (x[curNode.feature] <= curNode.split): 
 				curNode = curNode.leftChild
@@ -199,8 +201,14 @@ class Tree():
 				curNode = curNode.rightChild
 
 
-		return path, curNode.predict(x)
+		return curNode.predict(x)
 
+	def predict_batch(self,X):
+		YPred = []
+		for x in X:
+			YPred.append(self.predict(x).argmax())
+			
+		return YPred
 	# def getMaxProb(self, top_n = 1):
 	# 	paths = self.getAllPaths()
 	# 	probs = [reduce(lambda x, y: x*y, path) for path in paths]

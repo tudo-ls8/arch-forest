@@ -73,12 +73,23 @@ class ForestConverter:
 
 		headerCode = "float {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 		cppCode = "float {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
-		cppCode += "float pred = 0.0f;"
+		cppCode += "float pred[{classes}] = {0};".replace("{classes}", str(numClasses))
 
 		# TODO: IF BOOSTED FOREST; THEN WE JUST ADD PREDICTIONS. NO MAJORITY VOTE
 		for i in range(len(forest.trees)):
-			cppCode += "pred += {namespace}_predict{id}(pX);\n".replace("{id}", str(i)).replace("{namespace}", namespace)
-		cppCode += "return 1.0f/{num_trees} * pred;".replace("{num_trees}", str(len(forest.trees)))
+			cppCode += "{namespace}_predict{id}(pX, pred);\n".replace("{id}", str(i)).replace("{namespace}", namespace)
+		cppCode += """
+			unsigned int i = 0; 
+			float max = pred[0];
+			for (unsigned int j = 1; j < 5; ++j) {
+				if (pred[j] > max) {
+					max = pred[j];
+					i = j;
+				}
+			}
+
+			return i;
+		"""
 		cppCode += "}"
 
 		# initCode = "{"
