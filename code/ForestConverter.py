@@ -54,7 +54,7 @@ class ForestConverter:
 		assert(issubclass(type(treeConverter), TreeConverter))
 		self.treeConverter = treeConverter
 
-	def getCode(self, forest, numClasses):
+	def getCode(self, forest):
 		""" Generate the actual code for the given forest
 
 		Args:
@@ -67,6 +67,7 @@ class ForestConverter:
 		dim = self.treeConverter.getDim()
 		namespace = self.treeConverter.getNamespace()
 		featureType = self.treeConverter.getFeatureType()
+		numClasses = forest.getNumClasses()
 
 		# headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 		# cppCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
@@ -80,7 +81,7 @@ class ForestConverter:
 		cppCode += """
 			unsigned int i = 0; 
 			float max = pred[0];
-			for (unsigned int j = 1; j < 5; ++j) {
+			for (unsigned int j = 1; j < {numClasses}; ++j) {
 				if (pred[j] > max) {
 					max = pred[j];
 					i = j;
@@ -88,7 +89,7 @@ class ForestConverter:
 			}
 
 			return i;
-		"""
+		""".replace("{numClasses}", str(numClasses))
 		cppCode += "}"
 
 		# initCode = "{"

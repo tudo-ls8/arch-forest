@@ -16,6 +16,8 @@ from sklearn.tree import _tree
 import timeit
 from sklearn.externals import joblib
 
+np.set_printoptions(threshold=np.inf)
+
 import sys
 sys.setrecursionlimit(20000)
 sys.path.append('../code/')
@@ -172,9 +174,9 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
 
-def generateClassifier(outPath, targetAcc, DIM, N, numClasses,converter, namespace, featureType, forest, testFile, reps):
+def generateClassifier(outPath, targetAcc, DIM, N,converter, namespace, featureType, forest, testFile, reps):
 	#print("GETTING THE CODE")
-	headerCode, cppCode = converter.getCode(forest,numClasses)
+	headerCode, cppCode = converter.getCode(forest)
 	cppCode = "#include \"" + namespace + ".h\"\n" + cppCode
 	writeFiles(outPath, namespace, headerCode, cppCode)
 	writeTestFiles(outPath+"test", namespace, namespace + ".h", DIM, N, featureType, testFile, targetAcc, reps)
@@ -183,7 +185,7 @@ def getFeatureType(X):
 	containsFloat = False
 	for x in X:
 		for xi in x:
-			if isinstance(xi, float):
+			if isinstance(xi, np.float32):
 				containsFloat = True
 				break
 
@@ -276,23 +278,30 @@ def main(argv):
 			X = data[:,1:]
 			Y = data[:,0]
 
+			if target == "arm":
+				numTest = min(len(X),10000)
+			else:
+				numTest = len(X)
+
+			X = X[0:numTest,:].astype(dtype=np.float32)
+			Y = Y[0:numTest]
+
 			clf = joblib.load(basepath + "/text/" + name + ".pkl")
 			print("\tComputing target accuracy")
-			#YPredicted_ = loadedForest.predict(X)
+			YPredicted_ = loadedForest.predict_batch(X)
 			YPredictedSK = clf.predict(X)
+			# print(clf.classes_)
+			# print(YPredictedSK)
+
 			targetAcc = sum(YPredictedSK == Y)
 			#print("\tAccuracy MY:%s" % accuracy_score(Y, YPredicted_))
 			print("\ttargetAcc: %s" % sum(YPredictedSK == Y))
+			print("\tMYtargetAcc: %s" % sum(YPredicted_ == Y))
 			#print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
 			#print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
 
 			featureType = getFeatureType(X)
 			dim = len(X[0])
-			if target == "arm":
-				numTest = min(len(X),10000)
-			else:
-				numTest = len(X)
-			numClasses = len(set(Y))
 
 			# RESET the memory
 			X = []
@@ -304,38 +313,38 @@ all:
 """
 			# print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, "../../../test.csv", reps)
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardIfTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
 			for s in budgetSizes:
 				print("\tIf-Tree for budget", s)
 
 				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree_" + str(s), featureType, target, "path", s))
-				generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 
 			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
-			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
+			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
 
 			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
-			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
+			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 
 			print("\tGenerating NativeTrees")
 
 			# converter = ForestConverter(NaiveNativeTreeConverter(dim, "NaiveNativeTree", featureType))
-			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "NaiveNativeTree", featureType, loadedForest, "../../../test.csv", reps)
+			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "NaiveNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			# Makefile += "\t$(COMPILER) $(FLAGS) NaiveNativeTree.h NaiveNativeTree.cpp testNaiveNativeTree.cpp -o testNaiveNativeTree\n"
 
 			# converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardNativeTree", featureType, loadedForest, "../../../test.csv", reps)
+			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			# Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
 
 			# for s in setSizes:
 			# 	print("\tNative for set-size", s)
 
 			# 	converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree_" + str(s), featureType, s))
-			# 	generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
+			# 	generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
 			# 	Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 
 			# print("\tGenerating MixTrees")

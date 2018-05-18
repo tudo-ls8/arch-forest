@@ -114,6 +114,8 @@ class Forest:
 
 		return YPred
 
+	def getNumClasses(self):
+		return self.trees[0].getNumClasses()
 
 	# def getMaxDepth(self):
 	# 	return sum([t.getMaxDepth() for t in self.trees]) / len(self.trees)

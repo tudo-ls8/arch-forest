@@ -353,7 +353,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     # spilt is in kernel
                     if head.probLeft >= head.probRight: #swapping
                        #if the child is still in kernel
-                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "f){\n"
                         if self.inKernel[head.leftChild.id] is True:
                             tmpOut= self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]

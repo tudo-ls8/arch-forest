@@ -15,6 +15,10 @@ class Tree():
 
 		# Pointer to the root node of this tree
 		self.head = None
+		self.numClasses = None
+
+	def getNumClasses(self):
+		return self.numClasses
 
 	def fromTree(self, nodes, head):
 		self.nodes = nodes
@@ -27,6 +31,8 @@ class Tree():
 		if node.prediction is None:
 			node.rightChild = self.fromJSON(json["rightChild"], False)
 			node.leftChild = self.fromJSON(json["leftChild"], False)
+		elif self.numClasses is None:
+			self.numClasses = len(node.prediction)
 
 		if first:
 			self.head = node
@@ -57,6 +63,8 @@ class Tree():
 			
 			node.leftChild = self._fromSKLearn(tree, leftChild, roundSplit, skType, weight)
 			node.rightChild = self._fromSKLearn(tree, rightChild, roundSplit, skType, weight)
+		elif self.numClasses is None:
+			self.numClasses = len(node.prediction)
 
 		return node
 
