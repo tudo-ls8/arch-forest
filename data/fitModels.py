@@ -64,11 +64,10 @@ def testModel(XTrain,YTrain,XTest,YTest,model,name):
 	print(str(len(XTest)) + "\t" + str(len(XTest[0])) + "\t" + str(accuracy) + "\t" + str(mymodel.getAvgDepth()))
 	print()
 
-def fitModels(X,Y):
-	XTrain,XTest,YTrain,YTest = train_test_split(X, Y, test_size=0.25)
-	fitModels(XTrain,YTrain,XTest,YTest)
+def fitModels(XTrain,YTrain,XTest = None,YTest = None):
+	if XTest is None or YTest is None:
+		XTrain,XTest,YTrain,YTest = train_test_split(XTrain, YTrain, test_size=0.25)
 
-def fitModels(XTrain,YTrain,XTest,YTest):
 	with open("test.csv", 'w') as outFile:
 		for x,y in zip(XTest, YTest):
 			line = str(y)
@@ -77,10 +76,15 @@ def fitModels(XTrain,YTrain,XTest,YTest):
 
 			outFile.write(line + "\n")
 
-	testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=1),"DT_1")
-	testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=5),"DT_5")
-	testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=15),"DT_15")
-	testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=None),"DT_unlimited")
+	# testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=1),"DT_1")
+	# testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=5),"DT_5")
+	# testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=15),"DT_15")
+	# testModel(XTrain,YTrain,XTest,YTest,DecisionTreeClassifier(max_depth=None),"DT_unlimited")
+
+	testModel(XTrain,YTrain,XTest,YTest,RandomForestClassifier(n_estimators=1,n_jobs=4,max_depth=1),"DT_1")
+	testModel(XTrain,YTrain,XTest,YTest,RandomForestClassifier(n_estimators=1,n_jobs=4,max_depth=5),"DT_5")
+	testModel(XTrain,YTrain,XTest,YTest,RandomForestClassifier(n_estimators=1,n_jobs=4,max_depth=15),"DT_15")
+	testModel(XTrain,YTrain,XTest,YTest,RandomForestClassifier(n_estimators=1,n_jobs=4,max_depth=None),"DT_unlimited")
 
 	testModel(XTrain,YTrain,XTest,YTest,ExtraTreesClassifier(n_estimators=25,n_jobs=4,max_depth=1),"ET_1")
 	testModel(XTrain,YTrain,XTest,YTest,ExtraTreesClassifier(n_estimators=25,n_jobs=4,max_depth=5),"ET_5")

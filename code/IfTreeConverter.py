@@ -22,7 +22,7 @@ class StandardIFTreeConverter(TreeConverter):
             String: The actual if-else code as a string
         """
         # featureType = self.getFeatureType()
-        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
+        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
         #                                 .replace("{treeID}", str(treeID)) \
         #                                 .replace("{dim}", str(self.dim)) \
         #                                 .replace("{namespace}", self.namespace) \
@@ -32,7 +32,7 @@ class StandardIFTreeConverter(TreeConverter):
 
         if head.prediction is not None:
             for i in range(len(head.prediction)):
-                code += tabs + "pred[" + str(i) + "] += " + head.prediction[i] + ";\n"
+                code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
 
             #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
             #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
@@ -45,7 +45,7 @@ class StandardIFTreeConverter(TreeConverter):
 
         return code
 
-    def getCode(self, tree, treeID):
+    def getCode(self, tree, treeID, numClasses):
         """ Generate the actual if-else implementation for a given tree
 
         Args:
@@ -57,22 +57,22 @@ class StandardIFTreeConverter(TreeConverter):
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
         featureType = self.getFeatureType()
-        cppCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]){\n" \
+        cppCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
                                 .replace("{feature_t}", featureType) \
-                                .replace("{classes}", numClasses)
+                                .replace("{numClasses}", str(numClasses))
 
         cppCode += self.getImplementation(treeID, tree.head)
         cppCode += "}\n"
 
-        headerCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
+        headerCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
                                         .replace("{dim}", str(self.dim)) \
                                         .replace("{namespace}", self.namespace) \
                                         .replace("{feature_t}", featureType) \
-                                        .replace("{classes}", numClasses) 
+                                        .replace("{numClasses}", str(numClasses)) 
 
 
         return headerCode, cppCode
@@ -262,7 +262,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         # khchen: swap-algorithm
         if head.prediction is not None:
              for i in range(len(head.prediction)):
-                code += tabs + "pred[" + str(i) + "] += " + head.prediction[i] + ";\n"
+                code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
                 #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
                 #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
@@ -299,7 +299,7 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: The string of if-else code, the string of label if-else code, generated code size and Final label index
         """
         # featureType = self.getFeatureType()
-        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
+        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
         #                                 .replace("{treeID}", str(treeID)) \
         #                                 .replace("{dim}", str(self.dim)) \
         #                                 .replace("{namespace}", self.namespace) \
@@ -311,12 +311,16 @@ class OptimizedIFTreeConverter(TreeConverter):
         labelIdx = inIdx
         # khchen: swap-algorithm + kernel grouping
         if head.prediction is not None:
+                predCode = ""
+                for i in range(len(head.prediction)):
+                    predCode += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
+                
                 if self.inKernel[head.id] is False:
                     #return (code, tabs + "return " + str(int(head.prediction)) + ";\n", labelIdx)
-                    return (code, tabs + "return " + str(float(head.prediction)) + ";\n", labelIdx)
+                    return (code, predCode, labelIdx)
                 else:
                     #return (tabs + "return " + str(int(head.prediction)) + ";\n", labels,  labelIdx)
-                    return (tabs + "return " + str(float(head.prediction)) + ";\n", labels,  labelIdx)
+                    return (tabs + predCode, labels,  labelIdx)
         else:
                 # it is split node
                 # it is already in labels, the rest is all in labels:
@@ -422,7 +426,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                         code += tabs + "}\n"
         return (code, labels, labelIdx)
 
-    def getCode(self, tree, treeID):
+    def getCode(self, tree, treeID, numClasses):
         """ Generate the actual if-else implementation for a given tree
 
         Args:
@@ -438,7 +442,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("\tDONE PROBS")
 
         featureType = self.getFeatureType()
-        cppCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]){\n" \
+        cppCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
@@ -473,11 +477,11 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         cppCode += "}\n"
 
-        headerCode = "inline float {namespace}_predict{treeID}({feature_t} const pX[{dim}], float &pred[{numClasses}]);\n" \
+        headerCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
                                         .replace("{dim}", str(self.dim)) \
                                         .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType)
+                                        .replace("{feature_t}", featureType) \
                                         .replace("{numClasses}", str(numClasses))
 
         return headerCode, cppCode
