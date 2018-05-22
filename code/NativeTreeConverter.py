@@ -19,7 +19,7 @@ class NativeTreeConverter(TreeConverter):
     def getImplementation(self, head, treeID):
         raise NotImplementedError("This function should not be called directly, but only by a sub-class")
 
-    def getHeader(self, splitType, treeID, arrLen):
+    def getHeader(self, splitType, treeID, arrLen, numClasses):
             dimBit = int(np.log2(self.dim)) + 1 if self.dim != 0 else 1
 
             if dimBit <= 8:
@@ -31,36 +31,35 @@ class NativeTreeConverter(TreeConverter):
 
             featureType = self.getFeatureType()
             if (numClasses == 2):
-                headerCode = """struct {namespace}_Node{id} {
+                headerCode = """struct {namespace}_Node{treeID} {
                         //bool isLeaf;
                         //unsigned int prediction;
                         {dimDataType} feature;
                         {splitType} split;
-                        {arrayLenDataType} leftChild;
-                        {arrayLenDataType} rightChild;
+                        float leftChild[{numClasses}];
+                        float rightChild[{numClasses}];
                         unsigned char indicator;
 
                 };\n""".replace("{namespace}", self.namespace) \
-                           .replace("{id}", str(treeID)) \
-                           .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) \
+                           .replace("{treeID}", str(treeID)) \
                            .replace("{splitType}",splitType) \
-                           .replace("{dimDataType}",dimDataType)
+                           .replace("{dimDataType}",dimDataType) \
+                           .replace("{numClasses}",str(numClasses))
             else:
-                headerCode = """struct {namespace}_Node{id} {
+                headerCode = """struct {namespace}_Node{treeID} {
                         //bool isLeaf;
-                        float prediction[{numClasses}];
+                        //float prediction[{numClasses}];
                         {dimDataType} feature;
                         {splitType} split;
-                        {arrayLenDataType} leftChild;
-                        {arrayLenDataType} rightChild;
+                        float leftChild[{numClasses}];
+                        float rightChild[{numClasses}];
                         unsigned char indicator;
 
                 };\n""".replace("{namespace}", self.namespace) \
-                       .replace("{id}", str(treeID)) \
-                       .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) \
+                       .replace("{treeID}", str(treeID)) \
                        .replace("{splitType}",splitType) \
                        .replace("{dimDataType}",dimDataType) \
-                       .replace("{numClasses}",numClasses)
+                       .replace("{numClasses}",str(numClasses))
             '''
             headerCode += "inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{id}", str(treeID)) \
@@ -278,7 +277,7 @@ class StandardNativeTreeConverter(NativeTreeConverter):
     def __init__(self, dim, namespace, featureType):
             super().__init__(dim, namespace, featureType)
 
-    def getImplementation(self, head, treeID):
+    def getImplementation(self, head, treeID, numClasses):
             arrayStructs = []
             nextIndexInArray = 1
 
@@ -307,23 +306,47 @@ class StandardNativeTreeConverter(NativeTreeConverter):
 
                         if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
                             indicator = 3
-                            entry.append(int(node.leftChild.prediction))
-                            entry.append(int(node.rightChild.prediction))
+                            # entry.append(int(node.leftChild.prediction))
+                            # entry.append(int(node.rightChild.prediction))
+                            entry.append(node.leftChild.prediction)
+                            entry.append(node.rightChild.prediction)
                         elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
                             indicator = 2
-                            entry.append(nextIndexInArray)
+                            # entry.append(nextIndexInArray)
+                            tmp = []
+                            tmp.append(nextIndexInArray)
+                            for j in range(numClasses - 1):
+                                tmp.append(0)
+                            entry.append(tmp)
                             nextIndexInArray += 1
-                            entry.append(int(node.rightChild.prediction))
+                            entry.append(node.rightChild.prediction)
+                            #entry.append(int(node.rightChild.prediction))
                         elif (node.leftChild.prediction is not None) and (node.rightChild.prediction is  None):
                             indicator = 1
-                            entry.append(int(node.leftChild.prediction))
-                            entry.append(nextIndexInArray)
+                            entry.append(node.leftChild.prediction)
+                            #entry.append(int(node.leftChild.prediction))
+                            # entry.append(nextIndexInArray)
+                            tmp = []
+                            tmp.append(nextIndexInArray)
+                            for j in range(numClasses - 1):
+                                tmp.append(0)
+                            entry.append(tmp)
                             nextIndexInArray += 1
                         else:
                             indicator = 0
-                            entry.append(nextIndexInArray)
+                            # entry.append(nextIndexInArray)
+                            tmp = []
+                            tmp.append(nextIndexInArray)
+                            for j in range(numClasses - 1):
+                                tmp.append(0)
+                            entry.append(tmp)
                             nextIndexInArray += 1
-                            entry.append(nextIndexInArray)
+                            # entry.append(nextIndexInArray)
+                            tmp = []
+                            tmp.append(nextIndexInArray)
+                            for j in range(numClasses - 1):
+                                tmp.append(0)
+                            entry.append(tmp)
                             nextIndexInArray += 1
                         entry.append(indicator)
 
@@ -338,46 +361,94 @@ class StandardNativeTreeConverter(NativeTreeConverter):
             #print("Get ArrayLenType")
             #print(self.getArrayLenType(len(arrayStructs)))
 
-            cppCode = "{namespace}_Node{id} const tree{id}[{N}] = {" \
-                    .replace("{id}", str(treeID)) \
+            cppCode = "{namespace}_Node{treeID} const tree{treeID}[{N}] = {" \
+                    .replace("{treeID}", str(treeID)) \
                     .replace("{N}", str(len(arrayStructs))) \
                     .replace("{namespace}", self.namespace)
+
+            # for e in arrayStructs:
+            #         cppCode += "{"
+            #         for val in e:
+            #                 cppCode += str(val) + ","
+            #         cppCode = cppCode[:-1] + "},"
+            # cppCode = cppCode[:-1] + "};"
 
             for e in arrayStructs:
                     cppCode += "{"
                     for val in e:
-                            cppCode += str(val) + ","
+                            if type(val) is list:
+                                # this is the array of predictions
+                                cppCode += "{"
+                                if len(val) != 0:
+                                    for j in val:
+                                        cppCode += str(j) + ","
+                                else:
+                                    for j in range(numClasses):
+                                        cppCode += str(0) + ","
+                                cppCode = cppCode[:-1] + "},"
+                            else:
+                                cppCode += str(val) + ","
                     cppCode = cppCode[:-1] + "},"
             cppCode = cppCode[:-1] + "};"
 
+
+            # cppCode += """
+            #         inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+            #                 {arrayLenDataType} i = 0;
+
+            #                 while(true) {
+            #                     if (pX[tree{id}[i].feature] <= tree{id}[i].split){
+            #                         if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 2) {
+            #                             i = tree{id}[i].leftChild;
+            #                         } else {
+            #                             return tree{id}[i].leftChild;
+            #                         }
+            #                     } else {
+            #                         if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 1) {
+            #                             i = tree{id}[i].rightChild;
+            #                         } else {
+            #                             return tree{id}[i].rightChild;
+            #                         }
+            #                     }
+            #                 }
+
+            #                 return 0; // Make the compiler happy
+            #         }
+            # """.replace("{id}", str(treeID)) \
+            #    .replace("{dim}", str(self.dim)) \
+            #    .replace("{namespace}", self.namespace) \
+            #    .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
+            #    .replace("{feature_t}", featureType)
             cppCode += """
-                    inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+                    inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){
                             {arrayLenDataType} i = 0;
 
                             while(true) {
-                                if (pX[tree{id}[i].feature] <= tree{id}[i].split){
-                                    if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 2) {
-                                        i = tree{id}[i].leftChild;
+                                if (pX[tree{treeID}[i].feature] <= tree{treeID}[i].split){
+                                    if (tree{treeID}[i].indicator == 0 || tree{treeID}[i].indicator == 2) {
+                                        i = tree{treeID}[i].leftChild[0];
                                     } else {
-                                        return tree{id}[i].leftChild;
+                                        for(int j = 0; j < {numClasses}; j++)
+                                            pred[j] += tree{treeID}[i].leftChild[j];
+                                        break;
                                     }
                                 } else {
-                                    if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 1) {
-                                        i = tree{id}[i].rightChild;
+                                    if (tree{treeID}[i].indicator == 0 || tree{treeID}[i].indicator == 1) {
+                                        i = tree{treeID}[i].rightChild[0];
                                     } else {
-                                        return tree{id}[i].rightChild;
+                                        for(int j = 0; j < {numClasses}; j++)
+                                            pred[j] += tree{treeID}[i].rightChild[j];
+                                        break;
                                     }
                                 }
                             }
-
-                            return 0; // Make the compiler happy
                     }
-            """.replace("{id}", str(treeID)) \
+            """.replace("{treeID}", str(treeID)) \
                .replace("{dim}", str(self.dim)) \
                .replace("{namespace}", self.namespace) \
                .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
-               .replace("{feature_t}", featureType)
-
+               .replace("{feature_t}", featureType) \
+               .replace("{numClasses}", str(numClasses))
             return cppCode, arrLen
 
 class OptimizedNativeTreeConverter(NativeTreeConverter):
@@ -385,7 +456,7 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
         super().__init__(dim, namespace, featureType)
         self.setSize = setSize
 
-    def getImplementation(self, head, treeID):
+    def getImplementation(self, head, treeID, numClasses):
         arrayStructs = []
         nextIndexInArray = 1
 
@@ -442,26 +513,32 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                         entry.append(node.feature)
                         entry.append(node.split)
 
+                        tmp = []
                         if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
                             indicator = 3
-                            entry.append(int(node.leftChild.prediction))
-                            entry.append(int(node.rightChild.prediction))
+                            # entry.append(int(node.leftChild.prediction))
+                            # entry.append(int(node.rightChild.prediction))
+                            entry.append(node.leftChild.prediction)
+                            entry.append(node.rightChild.prediction)
                         elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
                             indicator = 2
-                            entry.append(-1)
+                            entry.append(tmp)
                             node.leftChild.parent = nextIndexInArray - 1
 
-                            entry.append(int(node.rightChild.prediction))
+                            # entry.append(int(node.rightChild.prediction))
+                            entry.append(node.rightChild.prediction)
                         elif (node.leftChild.prediction is not None) and (node.rightChild.prediction is  None):
                             indicator = 1
-                            entry.append(int(node.leftChild.prediction))
-                            entry.append(-1)
+                            # entry.append(int(node.leftChild.prediction))
+                            entry.append(node.leftChild.prediction)
+                            entry.append(tmp)
                             node.rightChild.parent = nextIndexInArray - 1
+
                         else:
                             indicator = 0
-                            entry.append(-1)
+                            entry.append(tmp)
                             node.leftChild.parent = nextIndexInArray - 1
-                            entry.append(-1)
+                            entry.append(tmp)
                             node.rightChild.parent = nextIndexInArray - 1
                         entry.append(indicator)
 
@@ -470,9 +547,15 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                         if node.parent != -1:
                             # if this node is not root, it must be assigned with self.side
                             if node.side == 0:
-                                arrayStructs[node.parent][2] = nextIndexInArray - 1
+                                # arrayStructs[node.parent][2] = nextIndexInArray - 1
+                                arrayStructs[node.parent][2] = [nextIndexInArray - 1]
+                                for j in range(numClasses - 1):
+                                    arrayStructs[node.parent][2].append(0)
                             else:
-                                arrayStructs[node.parent][3] = nextIndexInArray - 1
+                                # arrayStructs[node.parent][3] = nextIndexInArray - 1
+                                arrayStructs[node.parent][3] = [nextIndexInArray - 1]
+                                for j in range(numClasses - 1):
+                                    arrayStructs[node.parent][3].append(0)
 
                         # the following two fields now are modified by its children.
                         # entry.append(-1)
@@ -501,43 +584,89 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
         #print("Get ArrayLenType")
         #print(self.getArrayLenType(len(arrayStructs)))
 
-        cppCode = "{namespace}_Node{id} const tree{id}[{N}] = {" \
-                .replace("{id}", str(treeID)) \
+        cppCode = "{namespace}_Node{treeID} const tree{treeID}[{N}] = {" \
+                .replace("{treeID}", str(treeID)) \
                 .replace("{N}", str(len(arrayStructs))) \
                 .replace("{namespace}", self.namespace)
 
+        # for e in arrayStructs:
+        #         cppCode += "{"
+        #         for val in e:
+        #                 cppCode += str(val) + ","
+        #         cppCode = cppCode[:-1] + "},"
+        # cppCode = cppCode[:-1] + "};"
         for e in arrayStructs:
                 cppCode += "{"
                 for val in e:
-                        cppCode += str(val) + ","
+                        if type(val) is list:
+                            # this is the array of predictions
+                            cppCode += "{"
+                            if len(val) != 0:
+                                for j in val:
+                                    cppCode += str(j) + ","
+                            else:
+                                for j in range(numClasses):
+                                    cppCode += str(0) + ","
+                            cppCode = cppCode[:-1] + "},"
+                        else:
+                            cppCode += str(val) + ","
                 cppCode = cppCode[:-1] + "},"
         cppCode = cppCode[:-1] + "};"
+        # cppCode += """
+        #         inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+        #                     {arrayLenDataType} i = 0;
 
+        #                     while(true) {
+        #                         if (pX[tree{id}[i].feature] <= tree{id}[i].split){
+        #                             if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 2) {
+        #                                 i = tree{id}[i].leftChild;
+        #                             } else {
+        #                                 return tree{id}[i].leftChild;
+        #                             }
+        #                         } else {
+        #                             if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 1) {
+        #                                 i = tree{id}[i].rightChild;
+        #                             } else {
+        #                                 return tree{id}[i].rightChild;
+        #                             }
+        #                         }
+        #                     }
+        #                     return 0; // Make the compiler happy
+        #             }
+        # """.replace("{id}", str(treeID)) \
+        #    .replace("{dim}", str(self.dim)) \
+        #    .replace("{namespace}", self.namespace) \
+        #    .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
+        #    .replace("{feature_t}", featureType)
         cppCode += """
-                inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
-                            {arrayLenDataType} i = 0;
+                inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){
+                        {arrayLenDataType} i = 0;
 
-                            while(true) {
-                                if (pX[tree{id}[i].feature] <= tree{id}[i].split){
-                                    if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 2) {
-                                        i = tree{id}[i].leftChild;
-                                    } else {
-                                        return tree{id}[i].leftChild;
-                                    }
+                        while(true) {
+                            if (pX[tree{treeID}[i].feature] <= tree{treeID}[i].split){
+                                if (tree{treeID}[i].indicator == 0 || tree{treeID}[i].indicator == 2) {
+                                    i = tree{treeID}[i].leftChild[0];
                                 } else {
-                                    if (tree{id}[i].indicator == 0 || tree{id}[i].indicator == 1) {
-                                        i = tree{id}[i].rightChild;
-                                    } else {
-                                        return tree{id}[i].rightChild;
-                                    }
+                                    for(int j = 0; j < {numClasses}; j++)
+                                        pred[j] += tree{treeID}[i].leftChild[j];
+                                    break;
+                                }
+                            } else {
+                                if (tree{treeID}[i].indicator == 0 || tree{treeID}[i].indicator == 1) {
+                                    i = tree{treeID}[i].rightChild[0];
+                                } else {
+                                    for(int j = 0; j < {numClasses}; j++)
+                                        pred[j] += tree{treeID}[i].rightChild[j];
+                                    break;
                                 }
                             }
-                            return 0; // Make the compiler happy
-                    }
-        """.replace("{id}", str(treeID)) \
+                        }
+                }
+        """.replace("{treeID}", str(treeID)) \
            .replace("{dim}", str(self.dim)) \
            .replace("{namespace}", self.namespace) \
            .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
-           .replace("{feature_t}", featureType)
+           .replace("{feature_t}", featureType) \
+           .replace("{numClasses}", str(numClasses))
 
         return cppCode, arrLen

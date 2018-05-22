@@ -336,16 +336,16 @@ all:
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "NaiveNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) NaiveNativeTree.h NaiveNativeTree.cpp testNaiveNativeTree.cpp -o testNaiveNativeTree\n"
 
-			# converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
-			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardNativeTree", featureType, loadedForest, "../../../test.csv", reps)
-			# Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
+			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardNativeTree", featureType, loadedForest, "../../../test.csv", reps)
+			Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
 
-			# for s in setSizes:
-			# 	print("\tNative for set-size", s)
+			for s in setSizes:
+				print("\tNative for set-size", s)
 
-			# 	converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree_" + str(s), featureType, s))
-			# 	generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, testname, reps)
-			# 	Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
+				converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree_" + str(s), featureType, s))
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 
 			# print("\tGenerating MixTrees")
 			#converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
