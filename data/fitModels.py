@@ -51,10 +51,7 @@ def testModel(XTrain,YTrain,XTest,YTest,model,name):
 	for (skpred, mypred) in zip(SKPred,MYPred):
 		if (skpred != mypred):
 			print("Prediction mismatch!!!")
-			print(model.predict_proba(x.reshape(1, -1)))
-			print(model.predict(x.reshape(1, -1)))
-			print(mymodel.predict(x))
-			print(mymodel.pstr())
+			print(skpred, " vs ", mypred)
 
 	print("Saving model to PKL on disk")
 	joblib.dump(model, "text/"+name+".pkl")
@@ -96,6 +93,6 @@ def fitModels(XTrain,YTrain,XTest = None,YTest = None):
 	testModel(XTrain,YTrain,XTest,YTest,RandomForestClassifier(n_estimators=25,n_jobs=4,max_depth=15),"RF_15")
 	testModel(XTrain,YTrain,XTest,YTest,RandomForestClassifier(n_estimators=25,n_jobs=4,max_depth=None),"RF_unlimited")
 
-	testModel(XTrain,YTrain,XTest,YTest,AdaBoostClassifier(n_estimators=25,base_estimator=DecisionTreeClassifier(max_depth=1)),"AB_1")
-	testModel(XTrain,YTrain,XTest,YTest,AdaBoostClassifier(n_estimators=25,base_estimator=DecisionTreeClassifier(max_depth=3)),"AB_3")
-	testModel(XTrain,YTrain,XTest,YTest,AdaBoostClassifier(n_estimators=25,base_estimator=DecisionTreeClassifier(max_depth=5)),"AB_5")
+	testModel(XTrain,YTrain,XTest,YTest,AdaBoostClassifier(n_estimators=50,base_estimator=DecisionTreeClassifier(max_depth=1)),"AB_1")
+	testModel(XTrain,YTrain,XTest,YTest,AdaBoostClassifier(n_estimators=50,base_estimator=DecisionTreeClassifier(max_depth=3)),"AB_3")
+	testModel(XTrain,YTrain,XTest,YTest,AdaBoostClassifier(n_estimators=50,base_estimator=DecisionTreeClassifier(max_depth=5)),"AB_5")
