@@ -61,20 +61,27 @@ class NativeTreeConverter(TreeConverter):
                        .replace("{splitType}",splitType) \
                        .replace("{dimDataType}",dimDataType) \
                        .replace("{numClasses}",numClasses)
-
+            '''
             headerCode += "inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{id}", str(treeID)) \
                                             .replace("{dim}", str(self.dim)) \
                                             .replace("{namespace}", self.namespace) \
                                             .replace("{feature_t}", featureType)
+            '''
+            headerCode += "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
+                                            .replace("{treeID}", str(treeID)) \
+                                            .replace("{dim}", str(self.dim)) \
+                                            .replace("{namespace}", self.namespace) \
+                                            .replace("{feature_t}", featureType) \
+                                            .replace("{numClasses}", str(numClasses))
 
             return headerCode
 
-    def getCode(self, tree, treeID):
+    def getCode(self, tree, treeID, numClasses):
             # kh.chen
             # Note: this function has to be called once to traverse the tree to calculate the probabilities.
             tree.getProbAllPaths()
-            cppCode, arrLen = self.getImplementation(tree.head, treeID)
+            cppCode, arrLen = self.getImplementation(tree.head, treeID, numClasses)
 
             if self.containsFloat(tree):
                 splitDataType = "float"
@@ -98,7 +105,7 @@ class NativeTreeConverter(TreeConverter):
                     splitDataType = prefix + " short"
                 else:
                     splitDataType = prefix + " int"
-            headerCode = self.getHeader(splitDataType, treeID, arrLen)
+            headerCode = self.getHeader(splitDataType, treeID, arrLen, numClasses)
 
             return headerCode, cppCode
 
@@ -106,7 +113,7 @@ class NaiveNativeTreeConverter(NativeTreeConverter):
     def __init__(self, dim, namespace, featureType):
             super().__init__(dim, namespace, featureType)
 
-    def getHeader(self, splitType, treeID, arrLen):
+    def getHeader(self, splitType, treeID, arrLen, numClasses):
             dimBit = int(np.log2(self.dim)) + 1 if self.dim != 0 else 1
 
             if dimBit <= 8:
@@ -117,9 +124,21 @@ class NaiveNativeTreeConverter(NativeTreeConverter):
                     dimDataType = "unsigned int"
 
             featureType = self.getFeatureType()
+            # headerCode = """struct {namespace}_Node{id} {
+            #         bool isLeaf;
+            #         unsigned int prediction;
+            #         {dimDataType} feature;
+            #         {splitType} split;
+            #         {arrayLenDataType} leftChild;
+            #         {arrayLenDataType} rightChild;
+            # };\n""".replace("{namespace}", self.namespace) \
+            #            .replace("{id}", str(treeID)) \
+            #            .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) \
+            #            .replace("{splitType}",splitType) \
+            #            .replace("{dimDataType}",dimDataType)
             headerCode = """struct {namespace}_Node{id} {
                     bool isLeaf;
-                    unsigned int prediction;
+                    float prediction[{numClasses}];
                     {dimDataType} feature;
                     {splitType} split;
                     {arrayLenDataType} leftChild;
@@ -128,17 +147,29 @@ class NaiveNativeTreeConverter(NativeTreeConverter):
                        .replace("{id}", str(treeID)) \
                        .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) \
                        .replace("{splitType}",splitType) \
-                       .replace("{dimDataType}",dimDataType)
+                       .replace("{dimDataType}",dimDataType) \
+                       .replace("{numClasses}", str(numClasses))
 
+
+
+            '''
             headerCode += "inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{id}", str(treeID)) \
                                             .replace("{dim}", str(self.dim)) \
                                             .replace("{namespace}", self.namespace) \
                                             .replace("{feature_t}", featureType)
+            '''
+
+            headerCode += "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
+                                            .replace("{treeID}", str(treeID)) \
+                                            .replace("{dim}", str(self.dim)) \
+                                            .replace("{namespace}", self.namespace) \
+                                            .replace("{feature_t}", featureType) \
+                                            .replace("{numClasses}", str(numClasses))
 
             return headerCode
 
-    def getImplementation(self, head, treeID):
+    def getImplementation(self, head, treeID, numClasses):
             arrayStructs = []
             nextIndexInArray = 1
 
@@ -150,22 +181,25 @@ class NaiveNativeTreeConverter(NativeTreeConverter):
 
                 if node.prediction is not None:
                     entry.append(1)
-                    entry.append(int(node.prediction))
+                    #entry.append(int(node.prediction))
                     #entry.append(node.id)
+                    entry.append(node.prediction)
                     entry.append(0)
                     entry.append(0)
                     entry.append(0)
                     entry.append(0)
                 else:
                     entry.append(0)
-                    entry.append(0) # COnstant prediction
+                    #entry.append(0) # COnstant prediction
+                    tmp = []
+                    entry.append(tmp) # COnstant prediction
                     entry.append(node.feature)
                     entry.append(node.split)
                     entry.append(nextIndexInArray)
                     nextIndexInArray += 1
                     entry.append(nextIndexInArray)
                     nextIndexInArray += 1
-                    
+
                     nodes.append(node.leftChild)
                     nodes.append(node.rightChild)
 
@@ -177,35 +211,66 @@ class NaiveNativeTreeConverter(NativeTreeConverter):
             #print("Get ArrayLenType")
             #print(self.getArrayLenType(len(arrayStructs)))
 
-            cppCode = "{namespace}_Node{id} const tree{id}[{N}] = {" \
-                    .replace("{id}", str(treeID)) \
+            cppCode = "{namespace}_Node{treeID} const tree{treeID}[{N}] = {" \
+                    .replace("{treeID}", str(treeID)) \
                     .replace("{N}", str(len(arrayStructs))) \
                     .replace("{namespace}", self.namespace)
 
             for e in arrayStructs:
                     cppCode += "{"
                     for val in e:
-                            cppCode += str(val) + ","
+                            if type(val) is list:
+                                # this is the array of predictions
+                                cppCode += "{"
+                                if len(val) != 0:
+                                    for j in val:
+                                        cppCode += str(j) + ","
+                                else:
+                                    for j in range(numClasses):
+                                        cppCode += str(0) + ","
+                                cppCode = cppCode[:-1] + "},"
+                            else:
+                                cppCode += str(val) + ","
                     cppCode = cppCode[:-1] + "},"
             cppCode = cppCode[:-1] + "};"
 
+            # cppCode += """
+            #         inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+            #                 {arrayLenDataType} i = 0;
+            #                 while(!tree{id}[i].isLeaf) {
+            #                         if (pX[tree{id}[i].feature] <= tree{id}[i].split){
+            #                             i = tree{id}[i].leftChild;
+            #                         } else {
+            #                             i = tree{id}[i].rightChild;
+            #                         }
+            #                 }
+            #                 return tree{id}[i].prediction;
+            #         }
+            # """.replace("{id}", str(treeID)) \
+            #    .replace("{dim}", str(self.dim)) \
+            #    .replace("{namespace}", self.namespace) \
+            #    .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
+            #    .replace("{feature_t}", featureType)
+
             cppCode += """
-                    inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]){
+                    inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){
                             {arrayLenDataType} i = 0;
-                            while(!tree{id}[i].isLeaf) {
-                                    if (pX[tree{id}[i].feature] <= tree{id}[i].split){
-                                        i = tree{id}[i].leftChild;
+                            while(!tree{treeID}[i].isLeaf) {
+                                    if (pX[tree{treeID}[i].feature] <= tree{treeID}[i].split){
+                                        i = tree{treeID}[i].leftChild;
                                     } else {
-                                        i = tree{id}[i].rightChild;
+                                        i = tree{treeID}[i].rightChild;
                                     }
-                            } 
-                            return tree{id}[i].prediction;
+                            }
+                            for(int j = 0; j < {numClasses}; j++)
+                                pred[j] += tree{treeID}[i].prediction[j];
                     }
-            """.replace("{id}", str(treeID)) \
+            """.replace("{treeID}", str(treeID)) \
                .replace("{dim}", str(self.dim)) \
                .replace("{namespace}", self.namespace) \
                .replace("{arrayLenDataType}",self.getArrayLenType(len(arrayStructs))) \
-               .replace("{feature_t}", featureType)
+               .replace("{feature_t}", featureType) \
+               .replace("{numClasses}", str(numClasses))
 
             return cppCode, arrLen
 
@@ -239,7 +304,7 @@ class StandardNativeTreeConverter(NativeTreeConverter):
                         #entry.append(node.id)
                         entry.append(node.feature)
                         entry.append(node.split)
-                        
+
                         if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
                             indicator = 3
                             entry.append(int(node.leftChild.prediction))
@@ -261,7 +326,7 @@ class StandardNativeTreeConverter(NativeTreeConverter):
                             entry.append(nextIndexInArray)
                             nextIndexInArray += 1
                         entry.append(indicator)
-                        
+
                         nodes.append(node.leftChild)
                         nodes.append(node.rightChild)
 
