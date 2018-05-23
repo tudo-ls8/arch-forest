@@ -539,120 +539,122 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
         arrayStructs = []
         nextIndexInArray = 1
         posOfRootsInArray = []
+        L = []
 
+        # put all roots in L
         for i in range(len(forest.trees)):
-            # store the position of roots in an array
-            posOfRootsInArray.append(len(arrayStructs))
+            # why don't we use return vals
+            forest.trees[i].getProbAllPaths()
+            currentHead = forest.trees[i].head
+            currentHead.parent = -1
+            L.append(currentHead)
 
-            tree = forest.trees[i]
-
-            tree.getProbAllPaths()
-            head = tree.head
-            # Path-oriented Layout
-            head.parent = -1 #for root init
-            L = [head]
-            heapq.heapify(L)
-            while len(L) > 0:
+        heapq.heapify(L)
+        while len(L) > 0:
+                #print()
+                #for node in L:
+                #    print(node.pathProb)
+                #the one with the maximum probability will be the next sub-root.
+                node = heapq.heappop(L)
+                #print("subroot:"+str(node.id))
+                cset = []
+                while len(cset) != self.setSize: # 32/10
+                    #for n in L:
+                        #print(n)
                     #print()
-                    #for node in L:
-                    #    print(node.pathProb)
-                    #the one with the maximum probability will be the next sub-root.
-                    node = heapq.heappop(L)
-                    #print("subroot:"+str(node.id))
-                    cset = []
-                    while len(cset) != self.setSize: # 32/10
-                        #for n in L:
-                            #print(n)
-                        #print()
-                        #print(node.id)
-                        cset.append(node)
-                        entry = []
+                    #print(node.id)
+                    cset.append(node)
+                    entry = []
 
-                        if node.prediction is not None:
-                            continue
-                            #print("leaf:"+str(node.id))
-                            # entry.append(1)
-                            # entry.append(int(node.prediction))
-                            #entry.append(node.id)
-                            # entry.append(0)
-                            # entry.append(0)
-                            # entry.append(0)
-                            # entry.append(0)
-                            # arrayStructs.append(entry)
+                    if node.prediction is not None:
+                        continue
+                        #print("leaf:"+str(node.id))
+                        # entry.append(1)
+                        # entry.append(int(node.prediction))
+                        #entry.append(node.id)
+                        # entry.append(0)
+                        # entry.append(0)
+                        # entry.append(0)
+                        # entry.append(0)
+                        # arrayStructs.append(entry)
 
-                            # if node.parent != -1:
-                            #     # if this node is not root, it must be assigned with self.side
-                            #     if node.side == 0:
-                            #         arrayStructs[node.parent][4] = nextIndexInArray - 1
-                            #     else:
-                            #         arrayStructs[node.parent][5] = nextIndexInArray - 1
+                        # if node.parent != -1:
+                        #     # if this node is not root, it must be assigned with self.side
+                        #     if node.side == 0:
+                        #         arrayStructs[node.parent][4] = nextIndexInArray - 1
+                        #     else:
+                        #         arrayStructs[node.parent][5] = nextIndexInArray - 1
 
-                            # nextIndexInArray += 1
+                        # nextIndexInArray += 1
 
-                            # if len(L) != 0 and len(cset) != self.setSize:
-                            #     node = heapq.heappop(L)
-                            # else:
-                            #     break
+                        # if len(L) != 0 and len(cset) != self.setSize:
+                        #     node = heapq.heappop(L)
+                        # else:
+                        #     break
+                    else:
+                        #print("split:"+str(node.id))
+                        #entry.append(0)
+                        #entry.append(0) # Constant prediction
+                        #entry.append(node.id)
+                        entry.append(node.feature)
+                        entry.append(node.split)
+
+                        if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
+                            indicator = 3
+                            entry.append(int(node.leftChild.prediction))
+                            entry.append(int(node.rightChild.prediction))
+                        elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
+                            indicator = 2
+                            entry.append(-1)
+                            node.leftChild.parent = nextIndexInArray - 1
+
+                            entry.append(int(node.rightChild.prediction))
+                        elif (node.leftChild.prediction is not None) and (node.rightChild.prediction is  None):
+                            indicator = 1
+                            entry.append(int(node.leftChild.prediction))
+                            entry.append(-1)
+                            node.rightChild.parent = nextIndexInArray - 1
                         else:
-                            #print("split:"+str(node.id))
-                            #entry.append(0)
-                            #entry.append(0) # Constant prediction
-                            #entry.append(node.id)
-                            entry.append(node.feature)
-                            entry.append(node.split)
+                            indicator = 0
+                            entry.append(-1)
+                            node.leftChild.parent = nextIndexInArray - 1
+                            entry.append(-1)
+                            node.rightChild.parent = nextIndexInArray - 1
+                        entry.append(indicator)
 
-                            if (node.leftChild.prediction is not None) and (node.rightChild.prediction is not None):
-                                indicator = 3
-                                entry.append(int(node.leftChild.prediction))
-                                entry.append(int(node.rightChild.prediction))
-                            elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
-                                indicator = 2
-                                entry.append(-1)
-                                node.leftChild.parent = nextIndexInArray - 1
-
-                                entry.append(int(node.rightChild.prediction))
-                            elif (node.leftChild.prediction is not None) and (node.rightChild.prediction is  None):
-                                indicator = 1
-                                entry.append(int(node.leftChild.prediction))
-                                entry.append(-1)
-                                node.rightChild.parent = nextIndexInArray - 1
+                        # node.leftChild.parent = nextIndexInArray - 1
+                        # node.rightChild.parent = nextIndexInArray - 1
+                        if node.parent != -1:
+                            # if this node is not root, it must be assigned with self.side
+                            if node.side == 0:
+                                arrayStructs[node.parent][2] = nextIndexInArray - 1
                             else:
-                                indicator = 0
-                                entry.append(-1)
-                                node.leftChild.parent = nextIndexInArray - 1
-                                entry.append(-1)
-                                node.rightChild.parent = nextIndexInArray - 1
-                            entry.append(indicator)
+                                arrayStructs[node.parent][3] = nextIndexInArray - 1
 
-                            # node.leftChild.parent = nextIndexInArray - 1
-                            # node.rightChild.parent = nextIndexInArray - 1
-                            if node.parent != -1:
-                                # if this node is not root, it must be assigned with self.side
-                                if node.side == 0:
-                                    arrayStructs[node.parent][2] = nextIndexInArray - 1
-                                else:
-                                    arrayStructs[node.parent][3] = nextIndexInArray - 1
+                        # the following two fields now are modified by its children.
+                        # entry.append(-1)
+                        # entry.append(-1)
+                        arrayStructs.append(entry)
+                        # check if appended entry is root
+                        # if it is root, store its index
+                        if node.parent == -1:
+                            posOfRootsInArray.append(nextIndexInArray-1)
+                        nextIndexInArray += 1
 
-                            # the following two fields now are modified by its children.
-                            # entry.append(-1)
-                            # entry.append(-1)
-                            arrayStructs.append(entry)
-                            nextIndexInArray += 1
+                        # note the sides of the children
+                        node.leftChild.side = 0
+                        node.rightChild.side = 1
 
-                            # note the sides of the children
-                            node.leftChild.side = 0
-                            node.rightChild.side = 1
-
-                            if len(cset) != self.setSize:
-                                if node.leftChild.pathProb >= node.rightChild.pathProb:
-                                    heapq.heappush(L, node.rightChild)
-                                    node = node.leftChild
-                                else:
-                                    heapq.heappush(L, node.leftChild)
-                                    node = node.rightChild
+                        if len(cset) != self.setSize:
+                            if node.leftChild.pathProb >= node.rightChild.pathProb:
+                                heapq.heappush(L, node.rightChild)
+                                node = node.leftChild
                             else:
                                 heapq.heappush(L, node.leftChild)
-                                heapq.heappush(L, node.rightChild)
+                                node = node.rightChild
+                        else:
+                            heapq.heappush(L, node.leftChild)
+                            heapq.heappush(L, node.rightChild)
 
         featureType = self.getFeatureType()
         arrLen = len(arrayStructs)
