@@ -1,0 +1,54 @@
+./run.sh wine-quality intel
+./wine-quality/cpp/intel/forest_25/
+./wine-quality/cpp/intel/forest_25/,wine-quality/text/forest_25.pkl , 
+1.2217521741538522 , 9.20278936275408e-06,			
+StandardIfTree					0.00193231,1.39268e-07,649091,
+OptimizedPathIfTree_131072			0.00184615,0,616659,
+OptimizedSubPathIfTree_131072			0.00184615,0,616743,			
+StandardNativeTree				0.00311385,6.81657e-08,484738,			
+OptimizedNativeTree_25				0.00246154,0,484750,			
+MixTree						0.00184615,0,616127,      
+OptimizedNativeForest_25OLD			0.00246154,0,479996 
+OptimizedNativeForest_25NEW			0.00246154,0,467708 
+
+
+./run.sh magic intel
+./magic/cpp/intel/forest_25/
+./magic/cpp/intel/forest_25/,magic/text/forest_25.pkl , 
+1.2711576568662972 , 0.0023676609978949383,		
+StandardIfTree					0.00191377,4.06177e-09,796547,			
+OptimizedPathIfTree_131072			0.00148475,2.54538e-09,751827,			
+OptimizedSubPathIfTree_131072			0.00147213,0,751911,			
+StandardNativeTree				0.00347844,1.12105e-08,542082,	
+OptimizedNativeTree_25				0.00252366,0,542094,			
+MixTree						0.00147213,0,751295,      
+OptimizedNativeForest_25OLD			0.00294427,0,537340 
+OptimizedNativeForest_25NEW			0.00280547,1.73483e-08,541436
+
+
+./run.sh mnist/ intel
+./mnist//cpp/intel/forest_25/
+./mnist//cpp/intel/forest_25/,mnist/text/forest_25.pkl ,
+1.2225231648999033 , 2.9416119076198016e-06,		
+StandardIfTree					0.003224,9.20816e-09,3262339,			
+OptimizedPathIfTree_131072			0.002718,6.40408e-09,3311827,			
+OptimizedSubPathIfTree_131072			0.002696,5.2898e-09,3324199,			
+StandardNativeTree				0.005242,1.22816e-08,1279362,			
+OptimizedNativeTree_25				0.003708,6.46532e-09,1279374,	
+MixTree						0.003092,7.51023e-10,2415136,      
+OptimizedNativeForest_25OLD			0.002108,7.51024e-10,2024188
+OptimizedNativeForest_25NEW			NO DATA FOUND
+
+
+./run.sh letter/ intel
+./letter//cpp/intel/forest_25/,,
+StandardIfTree					0.00182,3.67348e-09,817027,			
+OptimizedPathIfTree_131072			0.001808,3.2e-09,948435,		
+OptimizedSubPathIfTree_131072			0.001804,8.00001e-10,948519,		
+StandardNativeTree				0.002808,3.2e-09,435586,			
+OptimizedNativeTree_25				0.002416,3.00408e-09,435598,	
+MixTree						0.0018,0,1219104,      
+OptimizedNativeForest_25OLD			0.002604,7.99999e-10,430844
+OptimizedNativeForest_25NEW			0.00242,3.67347e-09,430844 
+										 
+
