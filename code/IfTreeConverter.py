@@ -31,9 +31,10 @@ class StandardIFTreeConverter(TreeConverter):
         tabs = "".join(['\t' for i in range(level)])
 
         if head.prediction is not None:
-            for i in range(len(head.prediction)):
-                code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
+            # for i in range(len(head.prediction)):
+            #     code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
 
+            return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" ;
             #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
             #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
@@ -57,7 +58,7 @@ class StandardIFTreeConverter(TreeConverter):
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
         featureType = self.getFeatureType()
-        cppCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){\n" \
+        cppCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
@@ -67,12 +68,12 @@ class StandardIFTreeConverter(TreeConverter):
         cppCode += self.getImplementation(treeID, tree.head)
         cppCode += "}\n"
 
-        headerCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
+        headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
                                         .replace("{dim}", str(self.dim)) \
                                         .replace("{namespace}", self.namespace) \
                                         .replace("{feature_t}", featureType) \
-                                        .replace("{numClasses}", str(numClasses)) 
+                                        .replace("{numClasses}", str(numClasses))
 
 
         return headerCode, cppCode
@@ -114,7 +115,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("start getAllLeafPaths")
         allPath = tree.getAllLeafPaths()
         #print("done getAllLeafPatgs")
-	
+
         #print("prepare paths")
         paths = []
         for p in allPath:
@@ -131,7 +132,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("sort done")
         #print("paths=",tmpPathes)
         #pathProbs, paths = tree.getProbAllPaths()
-        
+
         # tmp = [list(x) for x in zip(*sorted(zip(pathProbs, paths), key=lambda pair: pair[0]))]
         # paths = tmp[1]
         # print("sorted=",paths)
@@ -210,7 +211,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
     def sizeOfNode(self, tree, node, splitDataType):
         size = 0
-       
+
         if node.prediction is not None:
             if splitDataType == "int" and self.architecture == "arm":
                 size += 2*4
@@ -261,8 +262,9 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         # khchen: swap-algorithm
         if head.prediction is not None:
-             for i in range(len(head.prediction)):
-                code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
+             # for i in range(len(head.prediction)):
+             #    code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
+                return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" ;
                 #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
                 #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
@@ -305,22 +307,22 @@ class OptimizedIFTreeConverter(TreeConverter):
         #                                 .replace("{namespace}", self.namespace) \
         #                                 .replace("{feature_t}", featureType) \
         #                                 .replace("{numClasses}", str(numClasses))
-        code = ""   
+        code = ""
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
         labelIdx = inIdx
         # khchen: swap-algorithm + kernel grouping
         if head.prediction is not None:
-                predCode = ""
-                for i in range(len(head.prediction)):
-                    predCode += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
-                
+                # predCode = ""
+                # for i in range(len(head.prediction)):
+                    # predCode += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
+
                 if self.inKernel[head.id] is False:
-                    #return (code, tabs + "return " + str(int(head.prediction)) + ";\n", labelIdx)
-                    return (code, predCode, labelIdx)
+                    return (code, tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n", labelIdx)
+                    # return (code, predCode, labelIdx)
                 else:
-                    #return (tabs + "return " + str(int(head.prediction)) + ";\n", labels,  labelIdx)
-                    return (tabs + predCode, labels,  labelIdx)
+                    return (tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n", labels,  labelIdx)
+                    # return (tabs + predCode, labels,  labelIdx)
         else:
                 # it is split node
                 # it is already in labels, the rest is all in labels:
@@ -442,12 +444,11 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("\tDONE PROBS")
 
         featureType = self.getFeatureType()
-        cppCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]){\n" \
+        cppCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
                                 .replace("{treeID}", str(treeID)) \
                                 .replace("{dim}", str(self.dim)) \
                                 .replace("{namespace}", self.namespace) \
-                                .replace("{feature_t}", featureType) \
-                                .replace("{numClasses}", str(numClasses))
+                                .replace("{feature_t}", featureType)
         #print("PATH SORT")
         #self.pathSort(tree)
         #print("PATH SORT DONE")
@@ -464,7 +465,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         elif self.orientation == "swap":
             cppCode += self.getSwapImplementation(treeID, tree.head)
         else:
-            self.nodeSort(tree)            
+            self.nodeSort(tree)
             output = self.getImplementation(tree, treeID, tree.head, 0)
             cppCode += output[0] #code
             cppCode += output[1] #label
@@ -472,16 +473,15 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         #self.nodeSort(tree)
         #print("\tGET IMPL")
-        
+
         #print("\tGET IMPL DONE")
 
         cppCode += "}\n"
 
-        headerCode = "inline void {namespace}_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
+        headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
                                         .replace("{dim}", str(self.dim)) \
                                         .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType) \
-                                        .replace("{numClasses}", str(numClasses))
+                                        .replace("{feature_t}", featureType)
 
         return headerCode, cppCode
