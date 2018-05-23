@@ -30,36 +30,46 @@ class NativeTreeConverter(TreeConverter):
                     dimDataType = "unsigned int"
 
             featureType = self.getFeatureType()
-            if (numClasses == 2):
-                headerCode = """struct {namespace}_Node{treeID} {
-                        //bool isLeaf;
-                        //unsigned int prediction;
-                        {dimDataType} feature;
-                        {splitType} split;
-                        float leftChild[{numClasses}];
-                        float rightChild[{numClasses}];
-                        unsigned char indicator;
+            # if (numClasses == 2):
+            #     headerCode = """struct {namespace}_Node{treeID} {
+            #             //bool isLeaf;
+            #             //unsigned int prediction;
+            #             {dimDataType} feature;
+            #             {splitType} split;
+            #             unsigend int leftChild; // NOTE: CAST 
+            #             unsigend int rightChild;
+            #             unsigned char indicator;
 
-                };\n""".replace("{namespace}", self.namespace) \
-                           .replace("{treeID}", str(treeID)) \
-                           .replace("{splitType}",splitType) \
-                           .replace("{dimDataType}",dimDataType) \
-                           .replace("{numClasses}",str(numClasses))
-            else:
-                headerCode = """struct {namespace}_Node{treeID} {
-                        //bool isLeaf;
-                        //float prediction[{numClasses}];
-                        {dimDataType} feature;
-                        {splitType} split;
-                        float leftChild[{numClasses}];
-                        float rightChild[{numClasses}];
-                        unsigned char indicator;
+            #     };\n""".replace("{namespace}", self.namespace) \
+            #                .replace("{treeID}", str(treeID)) \
+            #                .replace("{splitType}",splitType) \
+            #                .replace("{dimDataType}",dimDataType) \
+            #                .replace("{numClasses}",str(numClasses))
+            # else:
+            headerCode = """struct {namespace}_Node{treeID} {
+                    {dimDataType} feature;
+                    {splitType} split;
+                    //unsigned int leftChild;
+                    //unsigned int rightChild;
+                    float prediction[{numClasses}];
+                    // IF SPLIT NODE:
+                    //prediction[0] == leftChild (NOTE: Cast to unsigned int here)
+                    //prediction[1] == rightChild
+                    // ELSE:
+                    // prediction is float array
+                    unsigned char indicator;
+            };\n""".replace("{namespace}", self.namespace) \
+                   .replace("{treeID}", str(treeID)) \
+                   .replace("{splitType}",splitType) \
+                   .replace("{dimDataType}",dimDataType) \
+                   .replace("{numClasses}",str(numClasses))
 
-                };\n""".replace("{namespace}", self.namespace) \
-                       .replace("{treeID}", str(treeID)) \
-                       .replace("{splitType}",splitType) \
-                       .replace("{dimDataType}",dimDataType) \
-                       .replace("{numClasses}",str(numClasses))
+                        #                        //bool isLeaf;
+                        # {dimDataType} feature;
+                        # {splitType} split;
+                        # float leftChild[{numClasses}];
+                        # float rightChild[{numClasses}];
+                        # unsigned char indicator;
             '''
             headerCode += "inline unsigned int {namespace}_predict{id}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{id}", str(treeID)) \
