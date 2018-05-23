@@ -7,6 +7,8 @@ then
 fi
 
 for d in */; do
-	echo "Compiling $d"
-	./compile.sh $d $1
+	if [ "$d" != "./__pycache__/" ]; then
+		echo "Compiling $d"
+		./compile.sh $d $1
+	fi
 done

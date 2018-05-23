@@ -7,9 +7,11 @@ then
 fi
 
 for d in ./*/; do
-	echo "Cleaning ./$d/cpp/$1"
-	rm -r $d/cpp/$1 
+	if [ "$d" != "./__pycache__/" ]; then
+		echo "Cleaning ./$d/cpp/$1"
+		rm -r $d/cpp/$1 
 
-	echo "Cleaning ./$d/text/"
-	rm $d/text/* 
+		echo "Cleaning ./$d/text/"
+		rm $d/text/* 
+	fi
 done
