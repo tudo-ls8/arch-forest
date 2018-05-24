@@ -14,12 +14,12 @@ def readFile(path):
 	for row in f:
 		entries = row.strip("\n").split(",")
 		
-		# 
 		Y.append(int(entries[0])-1)
 		x = [int(e) for e in entries[1:]]
 		X.append(x)
 
-	return np.array(X).astype(dtype=np.float32),np.array(Y)
+	Y = np.array(Y)-min(Y)
+	return np.array(X).astype(dtype=np.float32), Y
 
 def main(argv):
 	XTrain,YTrain = readFile("train.csv")
