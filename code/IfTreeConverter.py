@@ -84,8 +84,8 @@ class OptimizedIFTreeConverter(TreeConverter):
     def __init__(self, dim, namespace, featureType, architecture, orientation="path", budgetSize=32*1000):
         super().__init__(dim, namespace, featureType)
         self.architecture = architecture
-        if self.architecture != "arm" and self.architecture != "intel":
-           raise NotImplementedError("Please use 'arm' or 'intel' as target architecture - other architectures are not supported")
+        if self.architecture != "arm" and self.architecture != "intel" and self.architecture != "ppc":
+           raise NotImplementedError("Please use 'arm' or 'intel' or 'ppc' as target architecture - other architectures are not supported")
         self.inKernel = {}
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         self.givenBudget = budgetSize
@@ -221,6 +221,10 @@ class OptimizedIFTreeConverter(TreeConverter):
                 size += 10
             elif splitDataType == "float" and self.architecture == "intel":
                 size += 10
+            elif splitDataType == "int" and self.architecture == "ppc":
+                size += 2*4
+            elif splitDataType == "float" and self.architecture == "ppc":
+                size += 2*4
         else:
             # In O0, the basic size of a split node is 4 instructions for loading.
             # Since a split node must contain a pair of if-else statements,
@@ -230,6 +234,12 @@ class OptimizedIFTreeConverter(TreeConverter):
                 size += 5*4
             elif splitDataType == "float" and self.architecture == "arm":
                 # this is for arm float
+                size += 8*4
+            elif splitDataType == "int" and self.architecture == "ppc":
+                # this is for ppc int (ins * bytes)
+                size += 5*4
+            elif splitDataType == "float" and self.architecture == "ppc":
+                # this is for ppc float
                 size += 8*4
             elif splitDataType == "int" and self.architecture == "intel":
                 # this is for intel integer (bytes)

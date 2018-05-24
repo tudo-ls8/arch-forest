@@ -222,14 +222,14 @@ def main(argv):
 		basepath = argv[0].strip("/")
 
 	if len(argv) < 2:
-		print("Please give a target architecture (arm or intel)")
+		print("Please give a target architecture (arm or intel or ppc)")
 		return
 	else:
 		target = argv[1]
 
-		if (target != "intel" and target != "arm"):
+		if (target != "intel" and target != "arm" and target != "ppc"):
 			print("Did not recognize architecture, ", target)
-			print("Please use arm or intel")
+			print("Please use arm or intel or ppc")
 			return
 
 	#if len(argv) < 3:
@@ -278,7 +278,7 @@ def main(argv):
 			X = data[:,1:]
 			Y = data[:,0]
 
-			if target == "arm":
+			if target == "arm" or target == "ppc":
 				numTest = min(len(X),10000)
 			else:
 				numTest = len(X)
@@ -353,6 +353,8 @@ all:
 
 			if target == "intel":
 				compiler = "g++"
+			elif target == "ppc":
+                                compiler = "powerpc-fsl-linux-g++ -m32 -mhard-float -mcpu=e6500 --sysroot=/opt/fsl-qoriq/2.0/sysroots/ppce6500-fsl-linux --static"
 			else:
 				compiler = "arm-linux-gnueabihf-g++"
 

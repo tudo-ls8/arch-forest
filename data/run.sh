@@ -8,7 +8,7 @@ fi
 
 if [ "$#" -lt 2 ]
 then
-  echo "Please give a (valid) compile target (arm or intel)"
+  echo "Please give a (valid) compile target (arm or intel or ppc)"
   exit 1
 fi
 
@@ -19,7 +19,7 @@ for d in ./$1/cpp/$2/*/; do
 	sklearn=$(./runSKLearn.py $1)
 	echo $d
 	cd $d
-	if [ "$2" == "arm" ]; then
+	if [ "$2" == "arm" ] || [ "$2" == "ppc" ]; then
 		measurments="$d,$sklearn,\
 			$(./testStandardIfTree),$(stat --printf="%s" testStandardIfTree),\
 			$(./testOptimizedPathIfTree_32000),$(stat --printf="%s" testOptimizedPathIfTree_32000),\
