@@ -66,7 +66,6 @@ def fitModels(XTrain,YTrain,XTest = None,YTest = None):
 	if XTest is None or YTest is None:
 		XTrain,XTest,YTrain,YTest = train_test_split(XTrain, YTrain, test_size=0.25)
 
-	if XTest is None:
 		with open("test.csv", 'w') as outFile:
 			for x,y in zip(XTest, YTest):
 				line = str(y)
