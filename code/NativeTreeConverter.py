@@ -36,26 +36,28 @@ class NativeTreeConverter(TreeConverter):
                         //unsigned int prediction;
                         {dimDataType} feature;
                         {splitType} split;
-                        unsigend int leftChild;
-                        unsigend int rightChild;
+                        {arrayLenDataType} leftChild;
+                        {arrayLenDataType} rightChild;
                         unsigned char indicator;
 
                 };\n""".replace("{namespace}", self.namespace) \
                            .replace("{treeID}", str(treeID)) \
                            .replace("{splitType}",splitType) \
-                           .replace("{dimDataType}",dimDataType)
+                           .replace("{dimDataType}",dimDataType) \
+                           .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) 
             else:
                 headerCode = """struct {namespace}_Node{treeID} {
                            //bool isLeaf;
                             {dimDataType} feature;
                             {splitType} split;
-                            unsigned int leftChild;
-                            unsigned int rightChild;
+                            {arrayLenDataType} leftChild;
+                            {arrayLenDataType} rightChild;
                             unsigned char indicator;
                 };\n""".replace("{namespace}", self.namespace) \
                        .replace("{treeID}", str(treeID)) \
                        .replace("{splitType}",splitType) \
-                       .replace("{dimDataType}",dimDataType)
+                       .replace("{dimDataType}",dimDataType) \
+                       .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) 
 
             headerCode += "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{treeID}", str(treeID)) \
@@ -123,8 +125,6 @@ class NaiveNativeTreeConverter(NativeTreeConverter):
                        .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) \
                        .replace("{splitType}",splitType) \
                        .replace("{dimDataType}",dimDataType)
-
-
 
             headerCode += "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{treeID}", str(treeID)) \

@@ -17,7 +17,7 @@ fi
 
 for d in ./$1/cpp/$2/*/; do
 	sklearn=$(./runSKLearn.py $1)
-    	echo $d
+	echo $d
 	cd $d
 	if [ "$2" == "arm" ]; then
 		measurments="$d,$sklearn,\
