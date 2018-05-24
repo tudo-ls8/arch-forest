@@ -86,33 +86,52 @@ class Forest:
 		return sum([t.getNumNodes() for t in self.trees])
 
 	def predict(self,x):
-		pred = None
-		i = 0
-		for t in self.trees:
-			i += 1
-			if pred is None:
-				pred = t.predict(x)
-			else:
-				tmp = t.predict(x) 
-				pred += tmp
+		pred = [0 for i in range(self.getNumClasses())]
 
-		return pred
+		for t in self.trees:
+			c = t.predict(x)
+			pred[c] += 1
+
+		return np.argmax(pred)
+		# pred = None
+		# i = 0
+		# for t in self.trees:
+		# 	i += 1
+		# 	if pred is None:
+		# 		pred = t.predict(x)
+		# 	else:
+		# 		tmp = t.predict(x) 
+		# 		pred += tmp
+
+		# return pred
 
 	def predict_batch(self,X):
 		YPred = []
+
 		for x in X:
-			pred = None
-			i = 0
+			pred = [0 for i in range(self.getNumClasses())]
+
 			for t in self.trees:
-				i += 1
-				if pred is None:
-					pred = t.predict(x)
-				else:
-					tmp = t.predict(x) 
-					pred += tmp
-			YPred.append(pred.argmax())			
+				c = t.predict(x)
+				pred[c] += 1
+
+			YPred.append(np.argmax(pred))
 
 		return YPred
+		# YPred = []
+		# for x in X:
+		# 	pred = None
+		# 	i = 0
+		# 	for t in self.trees:
+		# 		i += 1
+		# 		if pred is None:
+		# 			pred = t.predict(x)
+		# 		else:
+		# 			tmp = t.predict(x) 
+		# 			pred += tmp
+		# 	YPred.append(pred.argmax())			
+
+		# return YPred
 
 	def getNumClasses(self):
 		return self.trees[0].getNumClasses()

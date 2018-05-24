@@ -38,7 +38,7 @@ class StandardIFTreeConverter(TreeConverter):
             #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
             #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
-                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "f){\n"
                 code += self.getImplementation(treeID, head.leftChild, level + 1)
                 code += tabs + "} else {\n"
                 code += self.getImplementation(treeID, head.rightChild, level + 1)

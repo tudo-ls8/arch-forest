@@ -48,10 +48,11 @@ def testModel(XTrain,YTrain,XTest,YTest,model,name):
 	accuracy = accuracy_score(YTest, SKPred)
 	print("Accuracy:", accuracy)
 
-	for (skpred, mypred) in zip(SKPred,MYPred):
-		if (skpred != mypred):
-			print("Prediction mismatch!!!")
-			print(skpred, " vs ", mypred)
+	# This can now happen because of classical majority vote
+	# for (skpred, mypred) in zip(SKPred,MYPred):
+	# 	if (skpred != mypred):
+	# 		print("Prediction mismatch!!!")
+	# 		print(skpred, " vs ", mypred)
 
 	print("Saving model to PKL on disk")
 	joblib.dump(model, "text/"+name+".pkl")

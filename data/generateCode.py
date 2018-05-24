@@ -293,10 +293,10 @@ def main(argv):
 			# print(clf.classes_)
 			# print(YPredictedSK)
 
-			targetAcc = sum(YPredictedSK == Y)
+			targetAcc = sum(YPredicted_ == Y)
 			#print("\tAccuracy MY:%s" % accuracy_score(Y, YPredicted_))
-			print("\ttargetAcc: %s" % sum(YPredictedSK == Y))
-			print("\tMYtargetAcc: %s" % sum(YPredicted_ == Y))
+			print("\tWeighted Majority Vote: %s" % sum(YPredictedSK == Y))
+			print("\tStandard Majority Vote: %s" % sum(YPredicted_ == Y))
 			#print("\tAccuracy SK:%s" % accuracy_score(Y, YPredictedSK))
 			#print("\ttargetAcc SK: %s" % sum(YPredictedSK == Y))
 

@@ -164,4 +164,5 @@ class Node:
 		return s
 
 	def predict(self,x):
-		return np.array(self.prediction)
+		return np.argmax(self.prediction)
+		#return np.array(self.prediction)
