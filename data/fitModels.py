@@ -62,10 +62,12 @@ def testModel(XTrain,YTrain,XTest,YTest,model,name):
 	print(str(len(XTest)) + "\t" + str(len(XTest[0])) + "\t" + str(accuracy) + "\t" + str(mymodel.getAvgDepth()))
 	print()
 
-def fitModels(XTrain,YTrain,XTest = None,YTest = None):
+def fitModels(XTrain,YTrain,XTest = None,YTest = None,createTest = False):
 	if XTest is None or YTest is None:
 		XTrain,XTest,YTrain,YTest = train_test_split(XTrain, YTrain, test_size=0.25)
+		createTest = True
 
+	if createTest:
 		with open("test.csv", 'w') as outFile:
 			for x,y in zip(XTest, YTest):
 				line = str(y)
