@@ -273,10 +273,23 @@ def main(argv):
 
 			loadedForest = Forest.Forest()
 			loadedForest.fromJSON(forestPath)
-			data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
+			X = []
+			Y = []
+			file = open(basepath + "/test.csv")
+			for row in file:
+				entries = row.replace("\n","").split(",")
+				Y.append(float(entries[0]))
+				x = []
+				for e in entries[1:]:
+					x.append(float(e))
+				X.append(x)
 
-			X = data[:,1:]
-			Y = data[:,0]
+			X = np.array(X)
+			Y = np.array(Y)
+			#data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
+
+			#X = data[:,1:]
+			#Y = data[:,0]
 
 			if target == "arm" or target == "ppc":
 				numTest = min(len(X),10000)
