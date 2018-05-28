@@ -44,7 +44,7 @@ class NativeTreeConverter(TreeConverter):
                            .replace("{treeID}", str(treeID)) \
                            .replace("{splitType}",splitType) \
                            .replace("{dimDataType}",dimDataType) \
-                           .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) 
+                           .replace("{arrayLenDataType}", self.getArrayLenType(arrLen))
             else:
                 headerCode = """struct {namespace}_Node{treeID} {
                            //bool isLeaf;
@@ -57,7 +57,7 @@ class NativeTreeConverter(TreeConverter):
                        .replace("{treeID}", str(treeID)) \
                        .replace("{splitType}",splitType) \
                        .replace("{dimDataType}",dimDataType) \
-                       .replace("{arrayLenDataType}", self.getArrayLenType(arrLen)) 
+                       .replace("{arrayLenDataType}", self.getArrayLenType(arrLen))
 
             headerCode += "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
                                             .replace("{treeID}", str(treeID)) \
@@ -387,6 +387,7 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                             entry.append(int(np.argmax(node.rightChild.prediction)))
                         elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
                             indicator = 2
+                            entry.append(-1)
                             node.leftChild.parent = nextIndexInArray - 1
 
                             # entry.append(int(node.rightChild.prediction))
@@ -395,13 +396,14 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                             indicator = 1
                             # entry.append(int(node.leftChild.prediction))
                             entry.append(int(np.argmax(node.leftChild.prediction)))
+                            entry.append(-1)
                             node.rightChild.parent = nextIndexInArray - 1
 
                         else:
                             indicator = 0
                             entry.append(-1)
-                            entry.append(-1)
                             node.leftChild.parent = nextIndexInArray - 1
+                            entry.append(-1)
                             node.rightChild.parent = nextIndexInArray - 1
                         entry.append(indicator)
 
