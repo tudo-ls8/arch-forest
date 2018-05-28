@@ -278,7 +278,7 @@ def main(argv):
 			loadedForest.fromJSON(forestPath)
 
 			if X is None:
-				print("\t Reading CSV file to compute test accuracy")
+				print("\tReading CSV file to compute test accuracy")
 				# file = open(basepath + "/test.csv")
 				# for row in file:
 				# 	entries = row.replace("\n","").split(",")
