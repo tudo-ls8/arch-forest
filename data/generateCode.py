@@ -258,6 +258,9 @@ def main(argv):
 	if not os.path.exists(basepath + "/cpp/" + target):
 		os.makedirs(basepath + "/cpp/" + target)
 
+	X = None
+	Y = None
+
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith(".json"):
 			name = f.replace(".json","")
@@ -273,31 +276,32 @@ def main(argv):
 
 			loadedForest = Forest.Forest()
 			loadedForest.fromJSON(forestPath)
-			X = []
-			Y = []
-			file = open(basepath + "/test.csv")
-			for row in file:
-				entries = row.replace("\n","").split(",")
-				Y.append(float(entries[0]))
-				x = []
-				for e in entries[1:]:
-					x.append(float(e))
-				X.append(x)
 
-			X = np.array(X)
-			Y = np.array(Y)
-			#data = np.genfromtxt(basepath + "/test.csv", delimiter = ",")
+			if X is None:
+				print("\t Reading CSV file to compute test accuracy")
+				# file = open(basepath + "/test.csv")
+				# for row in file:
+				# 	entries = row.replace("\n","").split(",")
+				# 	Y.append(float(entries[0]))
+				# 	x = []
+				# 	for e in entries[1:]:
+				# 		x.append(float(e))
+				# 	X.append(x)
 
-			#X = data[:,1:]
-			#Y = data[:,0]
+				# X = np.array(X)
+				# Y = np.array(Y)
+				data = np.loadtxt(basepath + "/test.csv", delimiter = ",")
 
-			if target == "arm" or target == "ppc":
-				numTest = min(len(X),10000)
-			else:
-				numTest = len(X)
+				X = data[:,1:]
+				Y = data[:,0]
 
-			X = X[0:numTest,:].astype(dtype=np.float32)
-			Y = Y[0:numTest]
+				if target == "arm" or target == "ppc":
+					numTest = min(len(X),10000)
+				else:
+					numTest = len(X)
+
+				X = X[0:numTest,:].astype(dtype=np.float32)
+				Y = Y[0:numTest]
 
 			clf = joblib.load(basepath + "/text/" + name + ".pkl")
 			print("\tComputing target accuracy")
@@ -316,9 +320,6 @@ def main(argv):
 			featureType = getFeatureType(X)
 			dim = len(X[0])
 
-			# RESET the memory
-			X = []
-			Y = []
 			Makefile = """COMPILER = {compiler}
 FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
