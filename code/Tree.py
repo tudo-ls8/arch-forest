@@ -17,10 +17,6 @@ class Tree():
 		self.head = None
 		self.numClasses = None
 
-	def cleanup(self):
-		self.nodes = None
-		self.head = None
-
 	def getNumClasses(self):
 		return self.numClasses
 

@@ -133,10 +133,6 @@ class Forest:
 
 		# return YPred
 
-	def cleanup(self):
-		for t in self.trees:
-			t.cleanup()
-
 	def getNumClasses(self):
 		return self.trees[0].getNumClasses()
 
