@@ -6,6 +6,9 @@ import os.path
 import pickle
 import sklearn
 import json
+import gc
+import objgraph
+
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import tree
@@ -42,37 +45,37 @@ testCodeTemplate = """#include <iostream>
 
 void readCSV({feature_t} * XTest, unsigned int * YTest) {
 	std::string line;
-    std::ifstream file("{test_file}");
-    unsigned int xCnt = 0;
-    unsigned int yCnt = 0;
+	std::ifstream file("{test_file}");
+	unsigned int xCnt = 0;
+	unsigned int yCnt = 0;
 	unsigned int lineCnt = 0;
 
-    if (file.is_open()) {
-        while ( std::getline(file,line)) {
-            if ( line.size() > 0) {
-                std::stringstream ss(line);
-                std::string entry;
-                unsigned int first = true;
+	if (file.is_open()) {
+		while ( std::getline(file,line)) {
+			if ( line.size() > 0) {
+				std::stringstream ss(line);
+				std::string entry;
+				unsigned int first = true;
 
-                while( std::getline(ss, entry,',') ) {
-                    if (entry.size() > 0) {
-                    	if (first) {
-                    		YTest[yCnt++] = (unsigned int) atoi(entry.c_str());
-                    		first = false;
-                    	} else {
-                    		//XTest[xCnt++] = ({feature_t}) atoi(entry.c_str());
-                    		XTest[xCnt++] = ({feature_t}) atof(entry.c_str());
-                    	}
-                    }
-                }
+				while( std::getline(ss, entry,',') ) {
+					if (entry.size() > 0) {
+						if (first) {
+							YTest[yCnt++] = (unsigned int) atoi(entry.c_str());
+							first = false;
+						} else {
+							//XTest[xCnt++] = ({feature_t}) atoi(entry.c_str());
+							XTest[xCnt++] = ({feature_t}) atof(entry.c_str());
+						}
+					}
+				}
 				lineCnt++;
 				if( lineCnt > {N} ) {
 					break;
 				}
-            }
-        }
-        file.close();
-    }
+			}
+		}
+		file.close();
+	}
 
 }
 
@@ -119,14 +122,14 @@ measurmentCodeTemplate = """
 	unsigned int pred;
 	for (unsigned int i = 0; i < {num_repetitions}; ++i) {
 		unsigned int acc = 0;
-    	auto start = std::chrono::high_resolution_clock::now();
+		auto start = std::chrono::high_resolution_clock::now();
 		for (unsigned int j = 0; j < {N}; ++j) {
 			pred = {namespace}_predict(&XTest[{DIM}*j]);
 			acc += (pred == YTest[j]);
 			//acc += pred;
 		}
-    	auto end = std::chrono::high_resolution_clock::now();
-    	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 		runtimes.push_back((float) (duration.count() / {N}.0f));
 	}
@@ -214,6 +217,18 @@ def getFeatureType(X):
 
 	return dataType
 
+def debug_gc():
+	gc.collect()
+	# objects = gc.get_objects()
+	# objects_id = {}
+	# for o in objects:
+	# 	objects_id[id(o)] = True
+	
+	# verbose = 2
+
+	# for o in gc.get_objects():
+	# 	print(o)
+
 def main(argv):
 	if len(argv)<1:
 		print("Please give a sub-folder / dataset to be used")
@@ -277,6 +292,7 @@ def main(argv):
 			loadedForest = Forest.Forest()
 			loadedForest.fromJSON(forestPath)
 
+
 			if X is None:
 				print("\tReading CSV file to compute test accuracy")
 				# file = open(basepath + "/test.csv")
@@ -325,10 +341,11 @@ FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
 all:
 """
-			# print("\tGenerating If-Trees")
+			print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardIfTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
+			
 			for s in budgetSizes:
 				print("\tIf-Tree for budget", s)
 
@@ -336,30 +353,31 @@ all:
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
 
-			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
-			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
-			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
+				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNodeIfTree_" + str(s)+".h" + " OptimizedNodeIfTree_" + str(s)+".cpp testOptimizedNodeIfTree_" + str(s)+".cpp -o testOptimizedNodeIfTree_" + str(s) + "\n"
 
-			 	# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
-			 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
-			 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
+				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedSwapIfTree_" + str(s), featureType, target, "swap", s))
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 
 			print("\tGenerating NativeTrees")
 
 			converter = ForestConverter(NaiveNativeTreeConverter(dim, "NaiveNativeTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "NaiveNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) NaiveNativeTree.h NaiveNativeTree.cpp testNaiveNativeTree.cpp -o testNaiveNativeTree\n"
-
+ 
 			converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardNativeTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardNativeTree.h StandardNativeTree.cpp testStandardNativeTree.cpp -o testStandardNativeTree\n"
-
+ 
 			for s in setSizes:
 				print("\tNative for set-size", s)
-
+ 
 				converter = ForestConverter(OptimizedNativeTreeConverter(dim, "OptimizedNativeTree_" + str(s), featureType, s))
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
+
 
 			# print("\tGenerating MixTrees")
 			#converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
@@ -368,7 +386,7 @@ all:
 			if target == "intel":
 				compiler = "g++"
 			elif target == "ppc":
-                                compiler = "powerpc-fsl-linux-g++ -m32 -mhard-float -mcpu=e6500 --sysroot=/opt/fsl-qoriq/2.0/sysroots/ppce6500-fsl-linux --static"
+								compiler = "powerpc-fsl-linux-g++ -m32 -mhard-float -mcpu=e6500 --sysroot=/opt/fsl-qoriq/2.0/sysroots/ppce6500-fsl-linux --static"
 			else:
 				compiler = "arm-linux-gnueabihf-g++"
 
@@ -376,6 +394,7 @@ all:
 
 			with open(cppPath + "/" + "Makefile",'w') as code_file:
 				code_file.write(Makefile)
+
 		print("")
 
 if __name__ == "__main__":

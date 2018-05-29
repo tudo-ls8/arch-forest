@@ -17,6 +17,10 @@ class Tree():
 		self.head = None
 		self.numClasses = None
 
+	def cleanup(self):
+		self.nodes = None
+		self.head = None
+
 	def getNumClasses(self):
 		return self.numClasses
 
@@ -113,9 +117,21 @@ class Tree():
 
 		return paths,curProb,curSize
 
-	def getProbAllPaths(self, node = None, curPath = [], allPaths = [], pathNodes = [], pathLabels = []):
+	def getProbAllPaths(self, node = None, curPath = None, allPaths = None, pathNodes = None, pathLabels = None):
 		if node is None:
 			node = self.head
+
+		if curPath is None:
+			curPath = []
+
+		if allPaths is None:
+			allPaths = []
+
+		if pathNodes is None:
+			pathNodes = []
+
+		if pathLabels is None:
+			pathLabels = []
 
 		if node.prediction is not None:
 			allPaths.append(curPath)
@@ -154,11 +170,14 @@ class Tree():
 		paths = self.getAllPaths()
 		return sum([len(p) for p in paths]) / len(paths)
 	
-	def getAllLeafPaths(self, node = None, curPath = [], allPaths = None):
+	def getAllLeafPaths(self, node = None, curPath = None, allPaths = None):
 		# NOTE: FOR SOME REASON allPaths = [] DOES NOT CORRECTLY RESET
 		# 		THE allPaths VARIABLE. THUS WE USE NONE HERE 
 		if allPaths is None:
 			allPaths = []
+
+		if curPath is None:
+			curPath = []
 
 		if node is None:
 			node = self.head
@@ -173,11 +192,14 @@ class Tree():
 		return allPaths
 
 	# This returns all sub-paths starting with the root node
-	def getAllPaths(self, node = None, curPath = [], allPaths = None):
+	def getAllPaths(self, node = None, curPath = None, allPaths = None):
 		# NOTE: FOR SOME REASON allPaths = [] DOES NOT CORRECTLY RESET
 		# 		THE allPaths VARIABLE. THUS WE USE NONE HERE 
 		if allPaths is None:
 			allPaths = []
+
+		if curPath is None:
+			curPath = []
 
 		if node is None:
 			node = self.head

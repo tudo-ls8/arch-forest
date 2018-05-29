@@ -2,6 +2,8 @@ from ForestConverter import TreeConverter
 import numpy as np
 from functools import reduce
 import heapq
+import gc
+import objgraph
 
 class StandardIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
@@ -449,9 +451,13 @@ class OptimizedIFTreeConverter(TreeConverter):
             Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
             a *.h file and cppCode contains the code (=string) for a *.cpp file
         """
-        #print("\tGET ALL PROBS")
+        # gc.collect()
+        # objgraph.show_most_common_types(limit=20)
+        # print("\tGET ALL PROBS")
         tree.getProbAllPaths()
-        #print("\tDONE PROBS")
+        # print("\tDONE PROBS")  
+        # gc.collect()
+        # objgraph.show_most_common_types(limit=20)
 
         featureType = self.getFeatureType()
         cppCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
@@ -475,11 +481,16 @@ class OptimizedIFTreeConverter(TreeConverter):
         elif self.orientation == "swap":
             cppCode += self.getSwapImplementation(treeID, tree.head)
         else:
+            # print("\tPATH SORT START")
+            # gc.collect()
+            # objgraph.show_most_common_types(limit=20)
             self.nodeSort(tree)
             output = self.getImplementation(tree, treeID, tree.head, 0)
             cppCode += output[0] #code
             cppCode += output[1] #label
-        #print("\tPATH SORT DONE")
+            # print("\tPATH SORT DONE")
+            # gc.collect()
+            # objgraph.show_most_common_types(limit=20)
 
         #self.nodeSort(tree)
         #print("\tGET IMPL")
