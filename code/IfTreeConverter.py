@@ -3,7 +3,7 @@ import numpy as np
 from functools import reduce
 import heapq
 import gc
-import objgraph
+#import objgraph
 
 class StandardIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
