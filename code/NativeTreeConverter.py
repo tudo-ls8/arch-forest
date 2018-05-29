@@ -387,6 +387,7 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                             entry.append(int(np.argmax(node.rightChild.prediction)))
                         elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
                             indicator = 2
+                            entry.append(-1)
                             node.leftChild.parent = nextIndexInArray - 1
 
                             # entry.append(int(node.rightChild.prediction))
@@ -395,13 +396,14 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                             indicator = 1
                             # entry.append(int(node.leftChild.prediction))
                             entry.append(int(np.argmax(node.leftChild.prediction)))
+                            entry.append(-1)
                             node.rightChild.parent = nextIndexInArray - 1
 
                         else:
                             indicator = 0
                             entry.append(-1)
-                            entry.append(-1)
                             node.leftChild.parent = nextIndexInArray - 1
+                            entry.append(-1)
                             node.rightChild.parent = nextIndexInArray - 1
                         entry.append(indicator)
 
@@ -629,6 +631,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                             entry.append(int(np.argmax(node.rightChild.prediction)))
                         elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
                             indicator = 2
+                            entry.append(-1)
                             node.leftChild.parent = nextIndexInArray - 1
 
                             # entry.append(int(node.rightChild.prediction))
@@ -637,13 +640,14 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                             indicator = 1
                             # entry.append(int(node.leftChild.prediction))
                             entry.append(int(np.argmax(node.leftChild.prediction)))
+                            entry.append(-1)
                             node.rightChild.parent = nextIndexInArray - 1
 
                         else:
                             indicator = 0
                             entry.append(-1)
-                            entry.append(-1)
                             node.leftChild.parent = nextIndexInArray - 1
+                            entry.append(-1)
                             node.rightChild.parent = nextIndexInArray - 1
                         entry.append(indicator)
 
@@ -783,6 +787,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                                 entry.append(int(np.argmax(node.rightChild.prediction)))
                             elif (node.leftChild.prediction is None) and (node.rightChild.prediction is not None):
                                 indicator = 2
+                                entry.append(-1)
                                 node.leftChild.parent = nextIndexInArray - 1
 
                                 # entry.append(int(node.rightChild.prediction))
@@ -791,13 +796,14 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                                 indicator = 1
                                 # entry.append(int(node.leftChild.prediction))
                                 entry.append(int(np.argmax(node.leftChild.prediction)))
+                                entry.append(-1)
                                 node.rightChild.parent = nextIndexInArray - 1
 
                             else:
                                 indicator = 0
                                 entry.append(-1)
-                                entry.append(-1)
                                 node.leftChild.parent = nextIndexInArray - 1
+                                entry.append(-1)
                                 node.rightChild.parent = nextIndexInArray - 1
                             entry.append(indicator)
 
