@@ -165,7 +165,7 @@ class OptimizedNativeForestConverter:
 
 		cppCode += "\n for (int treeIndex = 0; treeIndex < {forestSize}; treeIndex++) {\n".replace("{forestSize}", str(len(forest.trees)))
 
-		cppCode += "  unsigned short i = nodePos[treeIndex];\n"
+		cppCode += "  unsigned int i = nodePos[treeIndex];\n"
 
 		cppCode += """
 				while(true) {
