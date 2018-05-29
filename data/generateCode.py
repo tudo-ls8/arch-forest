@@ -7,7 +7,7 @@ import pickle
 import sklearn
 import json
 import gc
-import objgraph
+#import objgraph
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
