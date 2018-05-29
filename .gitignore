@@ -42,7 +42,7 @@ data/mnist/*gz
 data/mnist/test.csv
 data/mnist/train.csv
 data/mnist/text/
-data/mnist/cpp
+
 data/mnist/mnist_train.csv
 data/mnist/mnist_test.csv
 
