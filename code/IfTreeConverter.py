@@ -5,80 +5,6 @@ import heapq
 import gc
 #import objgraph
 
-class StandardIFTreeConverter(TreeConverter):
-    """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
-    """
-    def __init__(self, dim, namespace, featureType):
-        super().__init__(dim, namespace, featureType)
-
-    def getImplementation(self, treeID, head, level = 1):
-        """ Generate the actual if-else implementation for a given node
-
-        Args:
-            treeID (TYPE): The id of this tree (in case we are dealing with a forest)
-            head (TYPE): The current node to generate an if-else structure for.
-            level (int, optional): The intendation level of the generated code for easier
-                                                        reading of the generated code
-
-        Returns:
-            String: The actual if-else code as a string
-        """
-        # featureType = self.getFeatureType()
-        # headerCode = "inline float {namespace}Forest_predict{treeID}({feature_t} const pX[{dim}], float pred[{numClasses}]);\n" \
-        #                                 .replace("{treeID}", str(treeID)) \
-        #                                 .replace("{dim}", str(self.dim)) \
-        #                                 .replace("{namespace}", self.namespace) \
-        #                                 .replace("{feature_t}", featureType)
-        code = ""
-        tabs = "".join(['\t' for i in range(level)])
-
-        if head.prediction is not None:
-            # for i in range(len(head.prediction)):
-            #     code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
-
-            return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" ;
-            #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
-            #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
-        else:
-                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "f){\n"
-                code += self.getImplementation(treeID, head.leftChild, level + 1)
-                code += tabs + "} else {\n"
-                code += self.getImplementation(treeID, head.rightChild, level + 1)
-                code += tabs + "}\n"
-
-        return code
-
-    def getCode(self, tree, treeID, numClasses):
-        """ Generate the actual if-else implementation for a given tree
-
-        Args:
-            tree (TYPE): The tree
-            treeID (TYPE): The id of this tree (in case we are dealing with a forest)
-
-        Returns:
-            Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
-            a *.h file and cppCode contains the code (=string) for a *.cpp file
-        """
-        featureType = self.getFeatureType()
-        cppCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
-                                .replace("{treeID}", str(treeID)) \
-                                .replace("{dim}", str(self.dim)) \
-                                .replace("{namespace}", self.namespace) \
-                                .replace("{feature_t}", featureType) \
-                                .replace("{numClasses}", str(numClasses))
-
-        cppCode += self.getImplementation(treeID, tree.head)
-        cppCode += "}\n"
-
-        headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
-                                        .replace("{treeID}", str(treeID)) \
-                                        .replace("{dim}", str(self.dim)) \
-                                        .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType) \
-                                        .replace("{numClasses}", str(numClasses))
-
-
-        return headerCode, cppCode
 
 class OptimizedIFTreeConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
@@ -322,6 +248,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         code = ""
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
+        tabs += "\t\t\t\t"
         labelIdx = inIdx
         # khchen: swap-algorithm + kernel grouping
         if head.prediction is not None:
@@ -329,11 +256,13 @@ class OptimizedIFTreeConverter(TreeConverter):
                 # for i in range(len(head.prediction)):
                     # predCode += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
 
+                incPredCnt = "predCnt[{predVal}]++;".replace("{predVal}", str(int(np.argmax(head.prediction))))
+
                 if self.inKernel[head.id] is False:
-                    return (code, tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n", labelIdx)
+                    return (code, tabs + incPredCnt + "\n" + tabs + "continue;\n", labelIdx)
                     # return (code, predCode, labelIdx)
                 else:
-                    return (tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n", labels,  labelIdx)
+                    return (tabs + incPredCnt + "\n" + tabs + "continue;\n", labels,  labelIdx)
                     # return (tabs + predCode, labels,  labelIdx)
         else:
                 # it is split node
@@ -440,6 +369,8 @@ class OptimizedIFTreeConverter(TreeConverter):
                         code += tabs + "}\n"
         return (code, labels, labelIdx)
 
+    # only returns cpp code now
+    # TODO: changed.
     def getCode(self, tree, treeID, numClasses):
         """ Generate the actual if-else implementation for a given tree
 
@@ -455,16 +386,11 @@ class OptimizedIFTreeConverter(TreeConverter):
         # objgraph.show_most_common_types(limit=20)
         # print("\tGET ALL PROBS")
         tree.getProbAllPaths()
-        # print("\tDONE PROBS")  
+        # print("\tDONE PROBS")
         # gc.collect()
         # objgraph.show_most_common_types(limit=20)
 
         featureType = self.getFeatureType()
-        cppCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]){\n" \
-                                .replace("{treeID}", str(treeID)) \
-                                .replace("{dim}", str(self.dim)) \
-                                .replace("{namespace}", self.namespace) \
-                                .replace("{feature_t}", featureType)
         #print("PATH SORT")
         #self.pathSort(tree)
         #print("PATH SORT DONE")
@@ -473,6 +399,7 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         #print("GET IMPL")
         #print("\tPATH SORT")
+        cppCode = ""
         if self.orientation == "path":
             self.pathSort(tree)
             output = self.getImplementation(tree, treeID, tree.head, 0)
@@ -497,12 +424,6 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         #print("\tGET IMPL DONE")
 
-        cppCode += "}\n"
+        #cppCode += "}\n"
 
-        headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
-                                        .replace("{treeID}", str(treeID)) \
-                                        .replace("{dim}", str(self.dim)) \
-                                        .replace("{namespace}", self.namespace) \
-                                        .replace("{feature_t}", featureType)
-
-        return headerCode, cppCode
+        return cppCode

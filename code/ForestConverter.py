@@ -92,14 +92,37 @@ class ForestConverter:
 		# """.replace("{numClasses}", str(numClasses))
 		# cppCode += "}"
 
+		headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+                                        .replace("{dim}", str(dim)) \
+                                        .replace("{namespace}", namespace) \
+                                        .replace("{feature_t}", featureType)
+
 		initCode = "{"
 		for i in range(0,numClasses):
 			initCode += "0,"
 		initCode = initCode[:-1] + "};\n"
 
 		cppCode += "	unsigned int predCnt[{num_classes}] = " + initCode
+
+		cppCode += """\n\tfor (int i = 0; i < {num_trees}; i++) {
+			switch (i) {""".replace("{num_trees}", str(len(forest.trees)))
+
+		tabs4 = "\t\t\t\t"
+
+		#TODO: BEGIN: insert switch cases here !
 		for i in range(len(forest.trees)):
-			cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
+			cppCode += ("\n" + tabs4 + "case {nrIt}:\n".replace("{nrIt}", str(i)))
+			tCode = self.treeConverter.getCode(forest.trees[i], 0, numClasses)
+			cppCode += tCode
+		#TODO: END:
+
+		cppCode += "}\n"
+		cppCode += "}\n"
+		#another one
+
+
+		#for i in range(len(forest.trees)):
+		#	cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
 		cppCode += """unsigned int pred = 0;
 				unsigned int cnt = predCnt[0];
 				for (unsigned int i = 1; i < {num_classes}; ++i) {
@@ -108,103 +131,10 @@ class ForestConverter:
 						pred = i;
 					}
 				}
-				return pred;
-			}\n"""
+				return pred;"""
 		cppCode = cppCode.replace("{num_classes}", str(numClasses))
-
-		for i in range(len(forest.trees)):
-			tHeader, tCode = self.treeConverter.getCode(forest.trees[i], i, numClasses)
-			headerCode += tHeader
-			cppCode += tCode
-
-		return headerCode, cppCode
-
-
-class OptimizedNativeForestConverter:
-	""" TODO
-	"""
-	def __init__(self, treeConverter):
-		""" Generate a new ForestConverter
-
-		Args:
-			treeConverter: A tree converter
-		"""
-		assert(issubclass(type(treeConverter), TreeConverter))
-		self.treeConverter = treeConverter
-
-	def getCode(self, forest):
-		""" Generate the actual code for the given forest
-
-		Args:
-			forest (TYPE): The forest object
-
-		Returns:
-			Tuple: A tuple (headerCode, cppCode), where headerCode contains the code (=string) for
-			a *.h file and cppCode contains the code (=string) for a *.cpp file
-		"""
-		dim = self.treeConverter.getDim()
-		namespace = self.treeConverter.getNamespace()
-		featureType = self.treeConverter.getFeatureType()
-		numClasses = forest.getNumClasses()
-
-		headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
-
-		# call to function of subclass
-		tHeader, tCode = self.treeConverter.getCode(forest)
-		cppCode = tCode
-		cppCode += "\nunsigned int {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)) \
-			.replace("{namespace}", namespace) \
-			.replace("{feature_t}", featureType)
-
-		initCode = "{"
-		for i in range(0,numClasses):
-			initCode += "0,"
-		initCode = initCode[:-1] + "};\n"
-
-		cppCode += " unsigned int predCnt[{num_classes}] = " + initCode
-
-		cppCode += "\n for (int treeIndex = 0; treeIndex < {forestSize}; treeIndex++) {\n".replace("{forestSize}", str(len(forest.trees)))
-
-		cppCode += "  unsigned int i = nodePos[treeIndex];\n"
-
-		cppCode += """
-				while(true) {
-                    if (pX[tree[i].feature] <= tree[i].split){
-                        if (tree[i].indicator == 0 || tree[i].indicator == 2) {
-                            i = tree[i].leftChild;
-                        } else {
-                            predCnt[tree[i].leftChild]++;
-														break;
-                        }
-                    } else {
-                        if (tree[i].indicator == 0 || tree[i].indicator == 1) {
-                            i = tree[i].rightChild;
-                        } else {
-                            predCnt[tree[i].rightChild]++;
-														break;
-                        }
-                    }
-                }
-        	}
-        """
-
-		cppCode += """
-    unsigned int pred = 0;
-    unsigned int cnt = predCnt[0];
-    for (unsigned int i = 1; i < {num_classes}; ++i) {
-            if (predCnt[i] > cnt) {
-                    cnt = predCnt[i];
-                    pred = i;
-            }
-    }
-    return pred;
-}\n"""
-		cppCode = cppCode.replace("{num_classes}", str(numClasses))
-
+		cppCode += "\n}"
+		#TODO: only one call here to generate code
 		#for i in range(len(forest.trees)):
-		# TODO:  pass the whole forest in getCode, no loop here BEFORE: getCode(forest.trees[i], i)
-		#tHeader, tCode = self.treeConverter.getCode(forest, 99)
-		headerCode += tHeader
-		#cppCode += tCode
 
 		return headerCode, cppCode
