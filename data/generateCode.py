@@ -381,9 +381,6 @@ all:
 				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 
-			print("\tGenerating OptimizedNativeForest")
-
-			for s in setSizes:
 				print("\tOptimizedNativeForest for set-size", s)
 
 				converter = OptimizedNativeForestConverter(OptimizedNativeTreeConverterForest(dim, "OptimizedNativeForest_" + str(s), featureType, s))
