@@ -412,9 +412,15 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                         if node.parent != -1:
                             # if this node is not root, it must be assigned with self.side
                             if node.side == 0:
-                                arrayStructs[node.parent][2] = nextIndexInArray - 1
+                                if arrayStructs[node.parent][2] == -1:
+                                    arrayStructs[node.parent][2] = nextIndexInArray - 1
+                                else:
+                                    print("BUG in parent.left")
                             else:
-                                arrayStructs[node.parent][3] = nextIndexInArray - 1
+                                if arrayStructs[node.parent][3] == -1:
+                                    arrayStructs[node.parent][3] = nextIndexInArray - 1
+                                else:
+                                    print("BUG in parent.right")
 
                         # the following two fields now are modified by its children.
                         # entry.append(-1)
