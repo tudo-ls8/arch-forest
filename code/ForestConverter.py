@@ -92,7 +92,7 @@ class ForestConverter:
 		# """.replace("{numClasses}", str(numClasses))
 		# cppCode += "}"
 
-		headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
+		headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n" \
                                         .replace("{dim}", str(dim)) \
                                         .replace("{namespace}", namespace) \
                                         .replace("{feature_t}", featureType)
@@ -116,9 +116,11 @@ class ForestConverter:
 			cppCode += tCode
 		#TODO: END:
 
-		cppCode += "}\n"
-		cppCode += "}\n"
-		#another one
+		cppCode += (tabs4 + "}\n")
+
+		cppCode += (tabs4 + "// GOTO LABELS HERE\n")
+
+		cppCode += "\t\t\t}\n"
 
 
 		#for i in range(len(forest.trees)):
