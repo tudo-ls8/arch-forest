@@ -343,7 +343,7 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                         #print(n)
                     #print()
                     #print(node.id)
-                    cset.append(node)
+                    # cset.append(node)
                     entry = []
 
                     if node.prediction is not None:
@@ -372,6 +372,7 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
                         # else:
                         #     break
                     else:
+                        cset.append(node)
                         #print("split:"+str(node.id))
                         #entry.append(0)
                         #entry.append(0) # Constant prediction
@@ -593,7 +594,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                         #print(n)
                     #print()
                     #print(node.id)
-                    cset.append(node)
+                    # cset.append(node)
                     entry = []
 
                     if node.prediction is not None:
@@ -622,6 +623,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                         # else:
                         #     break
                     else:
+                        cset.append(node)
                         #print("split:"+str(node.id))
                         #entry.append(0)
                         #entry.append(0) # Constant prediction
@@ -749,7 +751,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                             #print(n)
                         #print()
                         #print(node.id)
-                        cset.append(node)
+                        # cset.append(node)
                         entry = []
 
                         if node.prediction is not None:
@@ -778,6 +780,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                             # else:
                             #     break
                         else:
+                            cset.append(node)
                             #print("split:"+str(node.id))
                             #entry.append(0)
                             #entry.append(0) # Constant prediction
