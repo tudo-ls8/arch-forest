@@ -99,6 +99,7 @@ int main(int argc, char const *argv[]) {
 """
 
 measurmentCodeTemplate = """
+	std::vector<unsigned int> accuracies;
 	/* Burn-in phase to minimize cache-effect and check if data-set is okay */
 	for (unsigned int i = 0; i < 2; ++i) {
 		unsigned int acc = 0;
@@ -109,16 +110,16 @@ measurmentCodeTemplate = """
 
 		// SKLearn uses a weighted majority vote, whereas we use a "normal" majority vote
 		// Therefore, we may not match the accuracy of SKlearn perfectly!
-		if (acc != {target_acc}) {
-			std :: cout << "Target accuracy was not met!" << std :: endl;
-			std :: cout << "\t target: {target_acc}" << std :: endl;
-			std :: cout << "\t current:" << acc << std :: endl;
+		//if (acc != {target_acc}) {
+		//	std :: cout << "Target accuracy was not met!" << std :: endl;
+		//	std :: cout << "\t target: {target_acc}" << std :: endl;
+		//	std :: cout << "\t current:" << acc << std :: endl;
 			//return 1;
-		}
+		//}
+		accuracies.push_back(acc);
 	}
 
 	std::vector<float> runtimes;
-	std::vector<unsigned int> accuracies;
 	unsigned int pred;
 	for (unsigned int i = 0; i < {num_repetitions}; ++i) {
 		unsigned int acc = 0;
@@ -129,16 +130,30 @@ measurmentCodeTemplate = """
 			//acc += pred;
 		}
 		auto end = std::chrono::high_resolution_clock::now();
-		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		std::chrono::nanoseconds duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
 		runtimes.push_back((float) (duration.count() / {N}.0f));
+		accuracies.push_back(acc);
 	}
 
 	// Something close to welfords algorithm to estimate variance and mean on the fly
 	float avg = 0.0f;
 	float var = 0.0f;
+	float max, min;
 	unsigned int cnt = 0;
 	for (auto d : runtimes) {
+		if (cnt == 0) {
+			max = d;
+			min = d;
+		} else {
+			if (max < d) {
+				max = d;
+			}
+			if (min > d) {
+				min = d;
+			}
+		}
+
 		cnt++;
 		float delta = d - avg;
 		avg = avg + delta / cnt;
@@ -147,7 +162,7 @@ measurmentCodeTemplate = """
 	}
 
 	//std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
-	std :: cout << avg << "," << var / (cnt - 1) << std :: endl;
+	std :: cout << avg << "," << var / (cnt - 1) << "," << min << "," << max << std :: endl;
 """
 
 def writeFiles(basepath, basename, header, cpp):
