@@ -251,7 +251,7 @@ def main(argv):
 	if target == "intel":
 		setSizes = [25]
 		# budgetSizes = [128*1000, 384*1000]
-		budgetSizes = [128*1000]
+		budgetSizes = [32*10]
 		#setSize = 10 # 5,10,25,50
 		#budgetSize = 32*1000 # 16*1000, 32*1000, 64*1000
 	else:
@@ -344,14 +344,14 @@ FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
 all:
 """
-			print("\tGenerating If-Trees")
+			print("\tGenerating If-Forest")
 
 			for s in budgetSizes:
-				print("\tIf-Tree for budget", s)
+				print("\tIf-Forest for budget", s)
 
-				converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedPathIfTree_" + str(s), featureType, target, "path", s))
-				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedPathIfTree_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
-				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfTree_" + str(s)+".h" + " OptimizedPathIfTree_" + str(s)+".cpp testOptimizedPathIfTree_" + str(s)+".cpp -o testOptimizedPathIfTree_" + str(s) + "\n"
+				converter = OptIfForestConverter(OptimizedIFForestConverter(dim, "OptimizedPathIfForest_" + str(s), featureType, target, setSizes[0], "path", s))
+				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedPathIfForest_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
+				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfForest_" + str(s)+".h" + " OptimizedPathIfForest_" + str(s)+".cpp testOptimizedPathIfForest_" + str(s)+".cpp -o testOptimizedPathIfForest_" + str(s) + "\n"
 
 				# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
 				# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNodeIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)

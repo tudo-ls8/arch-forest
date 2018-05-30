@@ -39,7 +39,7 @@ class TreeConverter:
 		# Note: Use =I for unsigned int (see https://docs.python.org/2/library/struct.html#format-characters)
 	#	return hex(struct.unpack('=i', struct.pack('=f', f))[0])
 
-class ForestConverter:
+class OptIfForestConverter:
 	""" A ForestConverter converts an interal Forest structure to
 		architectural specific forest code. To do so, it uses a
 		treeConverter to convert single trees into appropriate
@@ -109,16 +109,20 @@ class ForestConverter:
 
 		tabs4 = "\t\t\t\t"
 
+		tLabel = ""
+		labelCode = ""
+
 		#TODO: BEGIN: insert switch cases here !
 		for i in range(len(forest.trees)):
 			cppCode += ("\n" + tabs4 + "case {nrIt}:\n".replace("{nrIt}", str(i)))
-			tCode = self.treeConverter.getCode(forest.trees[i], 0, numClasses)
+			tCode, tLabel = self.treeConverter.getCode(forest.trees[i], i, numClasses)
 			cppCode += tCode
+			labelCode += tLabel
 		#TODO: END:
 
 		cppCode += (tabs4 + "}\n")
 
-		cppCode += (tabs4 + "// GOTO LABELS HERE\n")
+		cppCode += labelCode
 
 		cppCode += "\t\t\t}\n"
 

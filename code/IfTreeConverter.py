@@ -6,17 +6,19 @@ import gc
 #import objgraph
 
 
-class OptimizedIFTreeConverter(TreeConverter):
+class OptimizedIFForestConverter(TreeConverter):
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
     """
-    def __init__(self, dim, namespace, featureType, architecture, orientation="path", budgetSize=32*1000):
+    def __init__(self, dim, namespace, featureType, architecture, setSize, orientation="path", budgetSize=32*1000):
         super().__init__(dim, namespace, featureType)
         self.architecture = architecture
         if self.architecture != "arm" and self.architecture != "intel" and self.architecture != "ppc":
            raise NotImplementedError("Please use 'arm' or 'intel' or 'ppc' as target architecture - other architectures are not supported")
         self.inKernel = {}
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
-        self.givenBudget = budgetSize
+        # TODO: BudgetSize for one tree in forest, change here
+        self.setSize = setSize
+        self.givenBudget = budgetSize / self.setSize
         self.orientation = orientation
         if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap":
             raise NotImplementedError("Please use 'path' or 'node' or 'swap' for orientation")
@@ -399,12 +401,15 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         #print("GET IMPL")
         #print("\tPATH SORT")
+
+        labelCode = ""
         cppCode = ""
+        #only path is supported
         if self.orientation == "path":
             self.pathSort(tree)
             output = self.getImplementation(tree, treeID, tree.head, 0)
             cppCode += output[0] #code
-            cppCode += output[1] #label
+            labelCode += output[1] #label
         elif self.orientation == "swap":
             cppCode += self.getSwapImplementation(treeID, tree.head)
         else:
@@ -426,4 +431,4 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         #cppCode += "}\n"
 
-        return cppCode
+        return cppCode, labelCode
