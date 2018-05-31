@@ -331,46 +331,16 @@ class OptimizedNativeTreeConverter(NativeTreeConverter):
         L = [head]
         heapq.heapify(L)
         while len(L) > 0:
-                #print()
-                #for node in L:
-                #    print(node.pathProb)
                 #the one with the maximum probability will be the next sub-root.
                 node = heapq.heappop(L)
                 #print("subroot:"+str(node.id))
                 cset = []
                 while len(cset) != self.setSize: # 32/10
-                    #for n in L:
-                        #print(n)
-                    #print()
-                    #print(node.id)
                     # cset.append(node)
                     entry = []
 
                     if node.prediction is not None:
-                        continue
-                        #print("leaf:"+str(node.id))
-                        # entry.append(1)
-                        # entry.append(int(node.prediction))
-                        #entry.append(node.id)
-                        # entry.append(0)
-                        # entry.append(0)
-                        # entry.append(0)
-                        # entry.append(0)
-                        # arrayStructs.append(entry)
-
-                        # if node.parent != -1:
-                        #     # if this node is not root, it must be assigned with self.side
-                        #     if node.side == 0:
-                        #         arrayStructs[node.parent][4] = nextIndexInArray - 1
-                        #     else:
-                        #         arrayStructs[node.parent][5] = nextIndexInArray - 1
-
-                        # nextIndexInArray += 1
-
-                        # if len(L) != 0 and len(cset) != self.setSize:
-                        #     node = heapq.heappop(L)
-                        # else:
-                        #     break
+                        break
                     else:
                         cset.append(node)
                         #print("split:"+str(node.id))
@@ -582,46 +552,16 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
 
         heapq.heapify(L)
         while len(L) > 0:
-                #print()
-                #for node in L:
-                #    print(node.pathProb)
                 #the one with the maximum probability will be the next sub-root.
                 node = heapq.heappop(L)
                 #print("subroot:"+str(node.id))
                 cset = []
                 while len(cset) != self.setSize: # 32/10
-                    #for n in L:
-                        #print(n)
-                    #print()
-                    #print(node.id)
                     # cset.append(node)
                     entry = []
 
                     if node.prediction is not None:
-                        continue
-                        #print("leaf:"+str(node.id))
-                        # entry.append(1)
-                        # entry.append(int(node.prediction))
-                        #entry.append(node.id)
-                        # entry.append(0)
-                        # entry.append(0)
-                        # entry.append(0)
-                        # entry.append(0)
-                        # arrayStructs.append(entry)
-
-                        # if node.parent != -1:
-                        #     # if this node is not root, it must be assigned with self.side
-                        #     if node.side == 0:
-                        #         arrayStructs[node.parent][4] = nextIndexInArray - 1
-                        #     else:
-                        #         arrayStructs[node.parent][5] = nextIndexInArray - 1
-
-                        # nextIndexInArray += 1
-
-                        # if len(L) != 0 and len(cset) != self.setSize:
-                        #     node = heapq.heappop(L)
-                        # else:
-                        #     break
+                        break
                     else:
                         cset.append(node)
                         #print("split:"+str(node.id))
@@ -739,46 +679,16 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
             L = [head]
             heapq.heapify(L)
             while len(L) > 0:
-                    #print()
-                    #for node in L:
-                    #    print(node.pathProb)
                     #the one with the maximum probability will be the next sub-root.
                     node = heapq.heappop(L)
                     #print("subroot:"+str(node.id))
                     cset = []
                     while len(cset) != self.setSize: # 32/10
-                        #for n in L:
-                            #print(n)
-                        #print()
-                        #print(node.id)
                         # cset.append(node)
                         entry = []
 
                         if node.prediction is not None:
-                            continue
-                            #print("leaf:"+str(node.id))
-                            # entry.append(1)
-                            # entry.append(int(node.prediction))
-                            #entry.append(node.id)
-                            # entry.append(0)
-                            # entry.append(0)
-                            # entry.append(0)
-                            # entry.append(0)
-                            # arrayStructs.append(entry)
-
-                            # if node.parent != -1:
-                            #     # if this node is not root, it must be assigned with self.side
-                            #     if node.side == 0:
-                            #         arrayStructs[node.parent][4] = nextIndexInArray - 1
-                            #     else:
-                            #         arrayStructs[node.parent][5] = nextIndexInArray - 1
-
-                            # nextIndexInArray += 1
-
-                            # if len(L) != 0 and len(cset) != self.setSize:
-                            #     node = heapq.heappop(L)
-                            # else:
-                            #     break
+                            break
                         else:
                             cset.append(node)
                             #print("split:"+str(node.id))
