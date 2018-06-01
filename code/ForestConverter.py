@@ -275,8 +275,8 @@ class OptIfForestConverter:
 
 		cppCode += "	unsigned int predCnt[{num_classes}] = " + initCode
 
-		cppCode += """\n\tfor (int i = 0; i < {num_trees}; i++) {
-			switch (i) {""".replace("{num_trees}", str(len(forest.trees)))
+		cppCode += """\n\t{
+			{"""
 
 		tabs4 = "\t\t\t\t"
 
@@ -285,7 +285,7 @@ class OptIfForestConverter:
 
 		#TODO: BEGIN: insert switch cases here !
 		for i in range(len(forest.trees)):
-			cppCode += ("\n" + tabs4 + "case {nrIt}:\n".replace("{nrIt}", str(i)))
+			#cppCode += ("\n" + tabs4 + "case {nrIt}:\n".replace("{nrIt}", str(i)))
 			tCode, tLabel = self.treeConverter.getCode(forest.trees[i], i, numClasses)
 			cppCode += tCode
 			labelCode += tLabel

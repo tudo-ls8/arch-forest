@@ -519,7 +519,7 @@ class OptimizedIFForestConverter(TreeConverter):
         # size of i-cache is 32kB. One instruction is 32B. So there are 1024 instructions in i-cache
         # TODO: BudgetSize for one tree in forest, change here
         self.setSize = setSize
-        self.givenBudget = budgetSize / self.setSize
+        self.givenBudget = budgetSize #/ self.setSize
         self.orientation = orientation
         if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap":
             raise NotImplementedError("Please use 'path' or 'node' or 'swap' for orientation")
@@ -762,10 +762,10 @@ class OptimizedIFForestConverter(TreeConverter):
                 incPredCnt = "predCnt[{predVal}]++;".replace("{predVal}", str(int(np.argmax(head.prediction))))
 
                 if self.inKernel[head.id] is False:
-                    return (code, tabs + incPredCnt + "\n" + tabs + "continue;\n", labelIdx)
+                    return (code, tabs + incPredCnt + "\n" + tabs + "", labelIdx)
                     # return (code, predCode, labelIdx)
                 else:
-                    return (tabs + incPredCnt + "\n" + tabs + "continue;\n", labels,  labelIdx)
+                    return (tabs + incPredCnt + "\n" + tabs + "", labels,  labelIdx)
                     # return (tabs + predCode, labels,  labelIdx)
         else:
                 # it is split node

@@ -355,17 +355,17 @@ def main(argv):
 			dim = len(X[0])
 
 			Makefile = """COMPILER = {compiler}
-FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
+FLAGS = -std=c++11 -Wall -funroll-loops -ftree-vectorize
 
 all:
 """
 
 
-			print("\tGenerating If-Trees")
+			"""print("\tGenerating If-Trees")
 			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "StandardIfTree", featureType, loadedForest, "../../../test.csv", reps)
 			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
-
+"""
 			for s in budgetSizes:
 				print("\tIf-Tree for budget", s)
 
@@ -387,7 +387,7 @@ all:
 				# generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 				# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 
-			print("\tGenerating NativeTrees")
+			"""print("\tGenerating NativeTrees")
 
 			converter = ForestConverter(NaiveNativeTreeConverter(dim, "NaiveNativeTree", featureType))
 			generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "NaiveNativeTree", featureType, loadedForest, "../../../test.csv", reps)
@@ -412,7 +412,7 @@ all:
 
 			# print("\tGenerating MixTrees")
 			#converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
-			#generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, "../../../test.csv", reps)
+			#generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, "../../../test.csv", reps)"""
 
 			if target == "intel":
 				compiler = "g++"
