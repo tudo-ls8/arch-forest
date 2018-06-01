@@ -19,6 +19,7 @@ from sklearn.tree import _tree
 import timeit
 from sklearn.externals import joblib
 
+
 def plotType(filename,targettype):
 	results = {}
 	f = open(filename, 'r')
@@ -37,6 +38,7 @@ def plotType(filename,targettype):
 			if not treedepth in results[exp]:
 				results[exp][treedepth] = []
 
+			print("entries:", entries)
 			results[exp][treedepth].append(float(entries[3]))
 
 	baseexp = "NaiveNativeTree"
@@ -69,11 +71,15 @@ def plotType(filename,targettype):
 			for depth in sorted(speedup[exp]):
 				minVal = min(speedup[exp][depth])
 				maxVal = max(speedup[exp][depth])
-				avgVal = sum(speedup[exp][depth])/len(speedup[exp][depth])
-				minEps = avgVal - minVal
-				maxEps = maxVal - avgVal
+				avgVal = np.mean(speedup[exp][depth])
+				#avgVal = sum(speedup[exp][depth])/len(speedup[exp][depth])
 
-				tikz += "({depth},{avgVal}) +- ({min},{max})\n".replace("{depth}", str(depth)).replace("{avgVal}", str(avgVal)).replace("{min}",str(minEps)).replace("{max}", str(maxEps))
+				#minEps = avgVal - minVal
+				#maxEps = maxVal - avgVal
+				minEps = np.std(speedup[exp][depth], axis=0)
+				maxEps = minEps
+
+				tikz += "({depth},{avgVal}) +- ({max},{min})\n".replace("{depth}", str(depth)).replace("{avgVal}", str(avgVal)).replace("{min}",str(minEps)).replace("{max}", str(maxEps))
 			tikz += "};\n"
 			tikz += "\\addlegendentry{{exp}}\n\n".replace("{exp}",exp.replace("_","\_"))
 
