@@ -135,9 +135,9 @@ def getFeatureVector(entries):
 	x.extend(day)
 
 	#x.append(float(entries[10]))
-	x.append(float(entries[11]))
-	x.append(float(entries[12]))
-	x.append(float(entries[13]))
+	x.append(int(float(entries[11])*1000))
+	x.append(int(float(entries[12])*1000))
+	x.append(int(float(entries[13])*1000))
 
 	if entries[14] == "failure":
 		x.extend([1,0,0])
@@ -146,11 +146,11 @@ def getFeatureVector(entries):
 	else:
 		x.extend([0,0,1])
 
-	x.append(float(entries[15]))
-	x.append(float(entries[16]))
-	x.append(float(entries[17]))
-	x.append(float(entries[18]))
-	x.append(float(entries[19]))
+	x.append(int(float(entries[15])*1000))
+	x.append(int(float(entries[16])*1000))
+	x.append(int(float(entries[17])*1000))
+	x.append(int(float(entries[18])*1000))
+	x.append(int(float(entries[19])*1000))
 
 	return x
 
@@ -177,7 +177,7 @@ def main(argv):
 	X = np.array(X).astype(dtype=np.float32)
 	Y = np.array(Y)
 
-	fitModels(X,Y)
+	fitModels(True,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

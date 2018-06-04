@@ -22,7 +22,7 @@ def main(argv):
 	YTest = DTest[:,-1]
 	YTest = [y-1 if y != 7 else 5 for y in YTest]
 
-	fitModels(XTrain,YTrain,XTest,YTest,True)
+	fitModels(True,XTrain,YTrain,XTest,YTest,True)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

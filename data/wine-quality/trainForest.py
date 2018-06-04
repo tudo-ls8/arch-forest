@@ -15,7 +15,7 @@ def main(argv):
 	# 		For some reason I was not able to extract this mapping from SKLearn ?!?!
 	Y = Y-min(Y)
 
-	fitModels(X,Y)
+	fitModels(False,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

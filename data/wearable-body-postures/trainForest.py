@@ -35,7 +35,7 @@ def readFile(path):
 			x.append(1)
 			
 		for e in entries[2:-1]:
-			x.append(float(e.replace(",",".")))
+			x.append(int(float(e.replace(",","."))*100))
 		X.append(x)
 		Y.append(y)
 
@@ -44,7 +44,7 @@ def readFile(path):
 def main(argv):
 	X,Y = readFile("dataset-har-PUC-Rio-ugulino.csv")
 
-	fitModels(X,Y)
+	fitModels(True,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

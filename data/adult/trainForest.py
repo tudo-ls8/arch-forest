@@ -260,7 +260,7 @@ def main(argv):
 	X = np.array(X).astype(dtype=np.float32)
 	Y = np.array(Y)
 
-	fitModels(X,Y)
+	fitModels(True,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

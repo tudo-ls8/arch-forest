@@ -14,7 +14,7 @@ def main(argv):
 	Y = data[idx,-1]
 	Y = Y-min(Y)
 
-	fitModels(X,Y)
+	fitModels(False,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

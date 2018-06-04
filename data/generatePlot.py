@@ -38,7 +38,6 @@ def plotType(filename,targettype):
 			if not treedepth in results[exp]:
 				results[exp][treedepth] = []
 
-			print("entries:", entries)
 			results[exp][treedepth].append(float(entries[3]))
 
 	baseexp = "NaiveNativeTree"

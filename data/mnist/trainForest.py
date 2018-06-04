@@ -25,7 +25,7 @@ def main(argv):
 	XTrain,YTrain = readFile("train.csv")
 	XTest,YTest = readFile("test.csv")
 
-	fitModels(XTrain,YTrain,XTest,YTest)
+	fitModels(True,XTrain,YTrain,XTest,YTest)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

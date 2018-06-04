@@ -52,7 +52,7 @@ def readFile():
 def main(argv):
 	X,Y = readFile()
 
-	fitModels(X,Y)
+	fitModels(False,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

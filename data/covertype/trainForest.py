@@ -28,7 +28,7 @@ def readFile(path):
 def main(argv):
 	X,Y = readFile("covtype.data")
 
-	fitModels(X,Y)
+	fitModels(True,X,Y)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
