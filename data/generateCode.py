@@ -324,6 +324,7 @@ def main(argv):
 
 				# X = np.array(X)
 				# Y = np.array(Y)
+
 				data = np.loadtxt(basepath + "/test.csv", delimiter = ",")
 
 				X = data[:,1:]
@@ -334,7 +335,11 @@ def main(argv):
 				else:
 					numTest = len(X)
 
-				X = X[0:numTest,:].astype(dtype=np.float32)
+				if all([x.is_integer() for X in data for x in X]):
+					X = X[0:numTest,:].astype(dtype=np.int32)
+				else:
+					X = X[0:numTest,:].astype(dtype=np.float32)
+
 				Y = Y[0:numTest]
 
 			clf = joblib.load(basepath + "/text/" + name + ".pkl")
