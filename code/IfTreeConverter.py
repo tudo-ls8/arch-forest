@@ -40,7 +40,7 @@ class StandardIFTreeConverter(TreeConverter):
             #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
             #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
-                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "f){\n"
+                code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                 code += self.getImplementation(treeID, head.leftChild, level + 1)
                 code += tabs + "} else {\n"
                 code += self.getImplementation(treeID, head.rightChild, level + 1)
@@ -367,7 +367,7 @@ class OptimizedIFTreeConverter(TreeConverter):
                     # spilt is in kernel
                     if head.probLeft >= head.probRight: #swapping
                        #if the child is still in kernel
-                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "f){\n"
+                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
                         if self.inKernel[head.leftChild.id] is True:
                             tmpOut= self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]

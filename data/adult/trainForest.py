@@ -257,7 +257,7 @@ def main(argv):
 			Y.append(y)
 			X.append(x)
 
-	X = np.array(X).astype(dtype=np.float32)
+	X = np.array(X).astype(dtype=np.int32)
 	Y = np.array(Y)
 
 	fitModels(True,X,Y)

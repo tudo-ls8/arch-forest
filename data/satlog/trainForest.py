@@ -14,11 +14,11 @@ def main(argv):
 	# Therfore we will map everything from 0-5!
 
 	print(DTrain)
-	XTrain = DTrain[:,0:-1].astype(dtype=np.float32)
+	XTrain = DTrain[:,0:-1].astype(dtype=np.int32)
 	YTrain = DTrain[:,-1]
 	YTrain = [y-1 if y != 7 else 5 for y in YTrain]
 	
-	XTest = DTest[:,0:-1].astype(dtype=np.float32)
+	XTest = DTest[:,0:-1].astype(dtype=np.int32)
 	YTest = DTest[:,-1]
 	YTest = [y-1 if y != 7 else 5 for y in YTest]
 

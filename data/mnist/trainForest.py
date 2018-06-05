@@ -19,7 +19,7 @@ def readFile(path):
 		X.append(x)
 
 	Y = np.array(Y)-min(Y)
-	return np.array(X).astype(dtype=np.float32), Y
+	return np.array(X).astype(dtype=np.int32), Y
 
 def main(argv):
 	XTrain,YTrain = readFile("train.csv")

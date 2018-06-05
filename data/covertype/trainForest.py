@@ -23,7 +23,7 @@ def readFile(path):
 	Y = np.array(Y)
 	X = np.array(X)
 	Y = Y-min(Y)
-	return np.array(X).astype(dtype=np.float32), np.array(Y)
+	return np.array(X).astype(dtype=np.int32), np.array(Y)
 
 def main(argv):
 	X,Y = readFile("covtype.data")

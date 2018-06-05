@@ -17,7 +17,7 @@ def readFile(path):
 		X.append(x)
 		Y.append(y)
 
-	return np.array(X).astype(dtype=np.float32), np.array(Y)
+	return np.array(X).astype(dtype=np.int32), np.array(Y)
 
 
 def main(argv):
