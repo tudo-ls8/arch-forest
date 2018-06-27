@@ -504,7 +504,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
             # Note: this function has to be called once to traverse the tree to calculate the probabilities.
             # tree.getProbAllPaths()
             #
-            cppCode, arrLen = self.getImplementation(forest)
+            cppCode, arrLen, PyStruct = self.getImplementation(forest)
 
             # We only check the data types and sizes of the first tree in the forest to decide the types and data types of all trees in the forest
             tree = forest.trees[0]
@@ -533,7 +533,7 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                     splitDataType = prefix + " int"
             headerCode = self.getHeader(splitDataType, arrLen)
 
-            return headerCode, cppCode
+            return headerCode, cppCode, PyStruct
 
             #overwrite function of superclass
     def getImplementation(self, forest):
@@ -645,7 +645,6 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
             cppCode += str(pos) + ","
         cppCode = cppCode[:-1] + "};\n"
 
-
         cppCode += "{namespace}_Node const tree[{N}] = {" \
                 .replace("{N}", str(len(arrayStructs))) \
                 .replace("{namespace}", self.namespace)
@@ -658,7 +657,28 @@ class OptimizedNativeTreeConverterForest(NativeTreeConverter):
                 cppCode = cppCode[:-1] + "},"
         cppCode = cppCode[:-1] + "};"
 
-        return cppCode, arrLen
+        # treeStruct.py, positions of roots
+        treeStructPy = "import numpy as np\n\n"
+        treeStructPy += "nodePos = np.array(["
+        for pos in posOfRootsInArray:
+            treeStructPy += str(pos) + ","
+        treeStructPy = treeStructPy[:-1]
+        treeStructPy += "])"
+
+        # tree nodes
+        treeStructPy += "\ntree = np.array(["
+
+        for e in arrayStructs:
+                treeStructPy += "["
+                for val in e:
+                    treeStructPy += str(val) + ","
+                treeStructPy = treeStructPy[:-1] + "],"
+        treeStructPy = treeStructPy[:-1]
+
+        treeStructPy += "])"
+        #print(treeStructPy)
+
+        return cppCode, arrLen, treeStructPy
 
     # OLD code, apply alg 2 at one tree at a time
     def getImplementationOLD(self, forest):

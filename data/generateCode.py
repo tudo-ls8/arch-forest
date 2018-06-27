@@ -94,6 +94,38 @@ int main(int argc, char const *argv[]) {
 	{allocMemory}
 	readCSV(XTest,YTest);
 
+	// generate Python test set
+	std::ofstream outputFile("testStruct.py");
+
+	outputFile << "import numpy as np" << std::endl;
+	outputFile << "pX = np.array([";
+
+	for (int i = 0; i < {N}*{DIM}; i+={DIM})
+	{
+		outputFile << "[";
+		for (int j = 0; j < {DIM}; j++)
+		{
+			if (j != 10)
+			{
+				outputFile << XTest[i+j] << ",";
+			}
+			else
+			{
+				outputFile << XTest[i+j];
+			}
+		}
+		if ((i+{DIM}) >= {N}*{DIM})
+		{
+			outputFile << "]";
+		}
+		else
+		{
+			outputFile << "],";
+		}
+	}
+	outputFile << "])";
+
+	//outputFile << std::endl << "print(len(pX))";
 	{measurmentCode}
 	{freeMemory}
 
@@ -168,6 +200,69 @@ measurmentCodeTemplate = """
 	std :: cout << avg << "," << var / (cnt - 1) << "," << min << "," << max << std :: endl;
 """
 
+OptNativePyForest = """
+from testStruct import * # imports pX test array
+from treeStruct import * # imports tree nodes and rootpositions
+
+import time
+import cProfile as profile
+
+from llvmlite import ir
+from numba import jit
+from numba import njit
+
+#tree[i][feature, split, lch, rch, ind]
+#tree[i][0,       1,      2,   3,  4  ]
+
+pXlen = len(pX)
+nrTrees = len(nodePos)
+
+def main():
+    # burn-in
+    print(pXlen)
+
+    for m in range (2):
+        for n in range(pXlen):
+            OptNativePyForestPredict(pX[n])
+
+    profile.run("timePrediction()")
+
+def timePrediction():
+    for p in range(pXlen):
+        OptNativePyForestPredict(pX[p])
+
+@jit
+def OptNativePyForestPredict(pX):
+    predCnt = np.array([0,0,0,0,0,0,0])
+    for treeIndex in range(nrTrees):
+        i = nodePos[treeIndex]
+        while(True):
+            if (pX[int(tree[i,0])] <= tree[i,1]):
+                if (tree[i,4] == 0 or tree[i,4] == 2):
+                    i = int(tree[i,2])
+                else:
+                    predCnt[int(tree[i,2])] += 1
+                    break
+            else:
+                if (tree[i,4] == 0 or tree[i,4] == 1):
+                    i = int(tree[i,3])
+                else:
+                    predCnt[int(tree[i,3])] += 1
+                    break
+
+    pred = 0
+    cnt = predCnt[0]
+    for i in range(nrTrees):
+        if (predCnt[i] > cnt):
+            cnt = predCnt[i]
+            pred = i
+
+    return pred
+
+if __name__ == "__main__":
+   main()
+"""
+
 def writeFiles(basepath, basename, header, cpp):
 	if header is not None:
 		with open(basepath + basename + ".h",'w') as code_file:
@@ -176,6 +271,11 @@ def writeFiles(basepath, basename, header, cpp):
 	if cpp is not None:
 		with open(basepath + basename + ".cpp",'w') as code_file:
 			code_file.write(cpp)
+
+def writeFilesPy(basepath, basename, python):
+	if python is not None:
+		with open(basepath + basename + ".py",'w') as code_file:
+			code_file.write(python)
 
 def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, targetAcc, reps):
 	allocMemory = "{feature_t} * XTest = new {feature_t}[{DIM}*{N}];\n \tunsigned int * YTest = new unsigned int[{N}];"
@@ -194,6 +294,16 @@ def writeTestFiles(outPath, namespace, header, dim, N, featureType, testFile, ta
 
 	with open(outPath + namespace + ".cpp",'w') as code_file:
 		code_file.write(testCode)
+
+def generateClassifierNativePy(outPath, targetAcc, DIM, N,converter, namespace, featureType, forest, testFile, reps):
+	#print("GETTING THE CODE")
+	headerCode, cppCode, PyStruct = converter.getCode(forest)
+	cppCode = "#include \"" + namespace + ".h\"\n" + cppCode
+	writeFiles(outPath, namespace, headerCode, cppCode)
+	writeTestFiles(outPath+"test", namespace, namespace + ".h", DIM, N, featureType, testFile, targetAcc, reps)
+	# write Pythontree and Pythonstruct
+	writeFilesPy(outPath + "/", "OptNativePyForest", OptNativePyForest)
+	writeFilesPy(outPath + "/", "treeStruct", PyStruct)
 
 def generateClassifier(outPath, targetAcc, DIM, N,converter, namespace, featureType, forest, testFile, reps):
 	#print("GETTING THE CODE")
@@ -297,6 +407,8 @@ def main(argv):
 	X = None
 	Y = None
 
+
+
 	for f in sorted(os.listdir(basepath + "/text/")):
 		if f.endswith("RF_5.json"):
 			name = f.replace(".json","")
@@ -343,17 +455,14 @@ def main(argv):
 			clf = joblib.load(basepath + "/text/" + name + ".pkl")
 			print("\tComputing target accuracy")
 
-			print(len(X))
-
-
 			YPredicted_ = loadedForest.predict_batch(X)
 
 
-			pr = cProfile.Profile()
-			pr.enable()
+			#pr = cProfile.Profile()
+		#	pr.enable()
 			YPredictedSK = clf.predict(X)
-			pr.disable()
-			pr.print_stats(sort='time')
+		#	pr.disable()
+		#	pr.print_stats(sort='time')
 
 			# print(clf.classes_)
 			# print(YPredictedSK)
@@ -369,7 +478,7 @@ def main(argv):
 			dim = len(X[0])
 
 			Makefile = """COMPILER = {compiler}
-FLAGS = -std=c++11 -Wall -funroll-loops -ftree-vectorize
+FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
 all:
 """
@@ -421,7 +530,7 @@ all:
 				print("\tOptimizedNativeForest for set-size", s)
 
 				converter = OptimizedNativeForestConverter(OptimizedNativeTreeConverterForest(dim, "OptimizedNativeForest_" + str(s), featureType, s))
-				generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeForest_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
+				generateClassifierNativePy(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeForest_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 				Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeForest_" + str(s)+".h" + " OptimizedNativeForest_" + str(s)+".cpp testOptimizedNativeForest_" + str(s)+".cpp -o testOptimizedNativeForest_" + str(s) + "\n"
 
 			# print("\tGenerating MixTrees")

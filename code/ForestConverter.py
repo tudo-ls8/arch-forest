@@ -150,7 +150,7 @@ class OptimizedNativeForestConverter:
 		headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 
 		# call to function of subclass
-		tHeader, tCode = self.treeConverter.getCode(forest)
+		tHeader, tCode, PyStruct = self.treeConverter.getCode(forest)
 		cppCode = tCode
 		cppCode += "\nunsigned int {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)) \
 			.replace("{namespace}", namespace) \
@@ -207,7 +207,7 @@ class OptimizedNativeForestConverter:
 		headerCode += tHeader
 		#cppCode += tCode
 
-		return headerCode, cppCode
+		return headerCode, cppCode, PyStruct
 
 
 class OptIfForestConverter:
