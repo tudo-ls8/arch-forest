@@ -1,0 +1,31 @@
+1.
+install standard LLVM 6.0 with help of https://blog.kowalczyk.info/article/k/how-to-install-latest-clang-6.0-on-ubuntu-16.04-xenial-wsl.html
+
+wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-6.0 main"
+sudo apt-get update
+sudo apt-get install -y clang-6.0
+
+2.
+then checkout https://github.com/numba/llvmlite.git from https://github.com/numba/llvmlite
+
+3.
+the llvmlite documentation is at http://llvmlite.pydata.org/en/latest/admin-guide/install.html#prerequisites
+
+to install llvmlite, go to llvm folder
+
+export LLVM_CONFIG=usr/bin/llvm-config-6.0
+export LLVM_CONFIG=/usr/lib/llvm-6.0/bin/llvm-config
+
+python3 setup.py build
+
+run tests with:
+
+python3 runtests.py
+python3 -m llvmlite.tests
+
+if ok, install
+
+python3 setup.py install
+
+if LLVM_CONFIG can't be found, use sudo su when setting the environment variable

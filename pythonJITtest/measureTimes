@@ -1,0 +1,9 @@
+import cProfile
+
+pr = cProfile.Profile()
+pr.enable()
+for line in fileinput.input():
+    for i in range(10):
+        y = int(line.strip()) + int(line.strip())
+pr.disable()
+pr.print_stats(sort='time')
