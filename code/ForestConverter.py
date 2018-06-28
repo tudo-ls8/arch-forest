@@ -240,8 +240,8 @@ class OptIfForestConverter:
 		featureType = self.treeConverter.getFeatureType()
 		numClasses = forest.getNumClasses()
 
-		headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
-		cppCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
+		headerCode = ""
+		cppCode = """@jit\ndef OptPathIfPredict(pX):\n"""
 
 		# headerCode = "float {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 		# cppCode = "float {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
@@ -262,23 +262,11 @@ class OptIfForestConverter:
 		# 	return i;
 		# """.replace("{numClasses}", str(numClasses))
 		# cppCode += "}"
-
-		headerCode = "unsigned int {namespace}_predict({feature_t} const pX[{dim}]);\n" \
-                                        .replace("{dim}", str(dim)) \
-                                        .replace("{namespace}", namespace) \
-                                        .replace("{feature_t}", featureType)
-
-		initCode = "{"
+		initCode = ""
+		cppCode += "\tpredCnt = np.array(["
 		for i in range(0,numClasses):
-			initCode += "0,"
-		initCode = initCode[:-1] + "};\n"
-
-		cppCode += "	unsigned int predCnt[{num_classes}] = " + initCode
-
-		cppCode += """\n\t{
-			{"""
-
-		tabs4 = "\t\t\t\t"
+			cppCode += "0,"
+		cppCode = cppCode[:-1] + "])\n"
 
 		tLabel = ""
 		labelCode = ""
@@ -291,26 +279,27 @@ class OptIfForestConverter:
 			labelCode += tLabel
 		#TODO: END:
 
-		cppCode += (tabs4 + "}\n")
+		cppCode += "\n"
 
 		cppCode += labelCode
 
-		cppCode += "\t\t\t}\n"
+		cppCode += "\n"
 
 
 		#for i in range(len(forest.trees)):
 		#	cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
-		cppCode += """unsigned int pred = 0;
-				unsigned int cnt = predCnt[0];
-				for (unsigned int i = 1; i < {num_classes}; ++i) {
-					if (predCnt[i] > cnt) {
-						cnt = predCnt[i];
-						pred = i;
-					}
-				}
-				return pred;"""
-		cppCode = cppCode.replace("{num_classes}", str(numClasses))
-		cppCode += "\n}"
+		cppCode += """	pred = 0
+	cnt = predCnt[0]
+	for i in range(7):
+		if (predCnt[i] > cnt):
+			cnt = predCnt[i]
+			pred = i
+	return pred
+
+if __name__ == "__main__":
+	main()
+		"""
+
 		#TODO: only one call here to generate code
 		#for i in range(len(forest.trees)):
 

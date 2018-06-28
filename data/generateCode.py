@@ -133,6 +133,8 @@ int main(int argc, char const *argv[]) {
 }
 """
 
+
+
 measurmentCodeTemplate = """
 	std::vector<unsigned int> accuracies;
 	/* Burn-in phase to minimize cache-effect and check if data-set is okay */
@@ -198,6 +200,37 @@ measurmentCodeTemplate = """
 
 	//std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
 	std :: cout << avg << "," << var / (cnt - 1) << "," << min << "," << max << std :: endl;
+"""
+
+OptPathIfPyForest = """
+from testStruct import * # imports pX
+#from treeStruct import * # imports nodePos and tree
+
+import time
+import cProfile as profile
+
+from llvmlite import ir
+from numba import jit
+from numba import njit
+
+import numpy as np
+
+pXlen = len(pX)
+
+def main():
+    # burn-in
+    print(pXlen)
+
+    for m in range (2):
+        for n in range(pXlen):
+            OptPathIfPredict(pX[n])
+
+    profile.run("timePrediction()")
+
+def timePrediction():
+    for p in range(pXlen):
+        OptPathIfPredict(pX[p])
+
 """
 
 OptNativePyForest = """
@@ -305,6 +338,16 @@ def generateClassifierNativePy(outPath, targetAcc, DIM, N,converter, namespace, 
 	writeFilesPy(outPath + "/", "OptNativePyForest", OptNativePyForest)
 	writeFilesPy(outPath + "/", "treeStruct", PyStruct)
 
+
+def generateClassifierPathIfPy(outPath, targetAcc, DIM, N,converter, namespace, featureType, forest, testFile, reps):
+	#print("GETTING THE CODE")
+	headerCode, cppCode = converter.getCode(forest)
+	# write Pythontree and Pythonstruct
+	PathIfForestPy = OptPathIfPyForest
+	PathIfForestPy += cppCode
+	writeFilesPy(outPath + "/", "OptPathIfPyForest", PathIfForestPy)
+
+
 def generateClassifier(outPath, targetAcc, DIM, N,converter, namespace, featureType, forest, testFile, reps):
 	#print("GETTING THE CODE")
 	headerCode, cppCode = converter.getCode(forest)
@@ -410,7 +453,7 @@ def main(argv):
 
 
 	for f in sorted(os.listdir(basepath + "/text/")):
-		if f.endswith(".json"):
+		if f.endswith("DT_5.json"):
 			name = f.replace(".json","")
 			cppPath = basepath + "/cpp/" + target + "/" + name
 			print("Generating", cppPath)
@@ -498,8 +541,8 @@ all:
 
 				#print("\tIf-Forest for budget", s)
 
-				#converter = OptIfForestConverter(OptimizedIFForestConverter(dim, "OptimizedPathIfForest_" + str(s), featureType, target, setSizes[0], "path", s))
-				#generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedPathIfForest_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
+				converter = OptIfForestConverter(OptimizedIFForestConverter(dim, "OptimizedPathIfForest_" + str(s), featureType, target, setSizes[0], "path", s))
+				generateClassifierPathIfPy(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedPathIfForest_"+ str(s), featureType, loadedForest, "../../../test.csv", reps)
 				#Makefile += "\t$(COMPILER) $(FLAGS) OptimizedPathIfForest_" + str(s)+".h" + " OptimizedPathIfForest_" + str(s)+".cpp testOptimizedPathIfForest_" + str(s)+".cpp -o testOptimizedPathIfForest_" + str(s) + "\n"
 
 				# converter = ForestConverter(OptimizedIFTreeConverter(dim, "OptimizedNodeIfTree_" + str(s), featureType, target, "node", s))
@@ -527,7 +570,7 @@ all:
 				#generateClassifier(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeTree_" + str(s), featureType, loadedForest, "../../../test.csv", reps)
 				#Makefile += "\t$(COMPILER) $(FLAGS) OptimizedNativeTree_" + str(s)+".h" + " OptimizedNativeTree_" + str(s)+".cpp testOptimizedNativeTree_" + str(s)+".cpp -o testOptimizedNativeTree_" + str(s) + "\n"
 
-				print("\tOptimizedNativeForest for set-size", s)
+				#print("\tOptimizedNativeForest for set-size", s)
 
 				converter = OptimizedNativeForestConverter(OptimizedNativeTreeConverterForest(dim, "OptimizedNativeForest_" + str(s), featureType, s))
 				generateClassifierNativePy(cppPath + "/", targetAcc, dim, numTest, converter, "OptimizedNativeForest_" + str(s), featureType, loadedForest, "../../../test.csv", reps)

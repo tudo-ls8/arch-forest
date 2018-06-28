@@ -751,7 +751,7 @@ class OptimizedIFForestConverter(TreeConverter):
         code = ""
         labels = ""
         tabs = "".join(['\t' for i in range(level)])
-        tabs += "\t\t\t\t"
+        #tabs += "\t\t\t\t"
         labelIdx = inIdx
         # khchen: swap-algorithm + kernel grouping
         if head.prediction is not None:
@@ -759,47 +759,47 @@ class OptimizedIFForestConverter(TreeConverter):
                 # for i in range(len(head.prediction)):
                     # predCode += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
 
-                incPredCnt = "predCnt[{predVal}]++;".replace("{predVal}", str(int(np.argmax(head.prediction))))
+                incPredCnt = "predCnt[{predVal}]+=1".replace("{predVal}", str(int(np.argmax(head.prediction))))
 
                 if self.inKernel[head.id] is False:
                     return (code, tabs + incPredCnt + "\n" + tabs + "", labelIdx)
                     # return (code, predCode, labelIdx)
                 else:
-                    return (tabs + incPredCnt + "\n" + tabs + "", labels,  labelIdx)
+                    return (tabs + incPredCnt + "\n" + "", labels,  labelIdx)
                     # return (tabs + predCode, labels,  labelIdx)
         else:
                 # it is split node
                 # it is already in labels, the rest is all in labels:
                 if self.inKernel[head.id] is False:
                     if head.probLeft >= head.probRight:
-                        labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "){\n"
+                        labels += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "):\n"
                         tmpOut = self.getImplementation(tree,treeID, head.leftChild, labelIdx, level + 1)
                         code += tmpOut[0]
                         labels += tmpOut[1]
                         labelIdx = int(tmpOut[2])
-                        labels += tabs + "} else {\n"
+                        labels += tabs + "else:\n"
                         tmpOut = self.getImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                         code += tmpOut[0]
                         labels += tmpOut[1]
                         labelIdx = int(tmpOut[2])
-                        labels += tabs + "}\n"
+                        labels += tabs + "\n"
                     else:
-                        labels += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                        labels += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "):\n"
                         tmpOut = self.getImplementation(tree,treeID, head.rightChild, labelIdx, level + 1)
                         code += tmpOut[0]
                         labels += tmpOut[1]
                         labelIdx = int(tmpOut[2])
-                        labels += tabs + "} else {\n"
+                        labels += tabs + "else:\n"
                         tmpOut = self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                         code += tmpOut[0]
                         labels += tmpOut[1]
                         labelIdx = int(tmpOut[2])
-                        labels += tabs + "}\n"
+                        labels += tabs + "\n"
                 else:
                     # spilt is in kernel
                     if head.probLeft >= head.probRight: #swapping
                        #if the child is still in kernel
-                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "f){\n"
+                        code += tabs + "if(pX[" + str(head.feature) + "] <= " + str(head.split) + "):\n"
                         if self.inKernel[head.leftChild.id] is True:
                             tmpOut= self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
@@ -810,13 +810,13 @@ class OptimizedIFForestConverter(TreeConverter):
                             labelIdx += 1
                             code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                             labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
-                            labels += "{\n"
+                            labels += "\n"
                             tmpOut = self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
                             labelIdx = int(tmpOut[2])
-                            labels += "}\n"
-                        code += tabs + "} else {\n"
+                            labels += "\n"
+                        code += tabs + "else:\n"
 
                         if self.inKernel[head.rightChild.id] is True:
                             tmpOut = self.getImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
@@ -828,16 +828,16 @@ class OptimizedIFForestConverter(TreeConverter):
                             labelIdx += 1
                             code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                             labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
-                            labels += "{\n"
+                            labels += "\n"
                             tmpOut = self.getImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
                             labelIdx = int(tmpOut[2])
-                            labels += "}\n"
-                        code += tabs + "}\n"
+                            labels += "\n"
+                        code += tabs + "\n"
                     else:
                        #if the child is still in kernel
-                        code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "){\n"
+                        code += tabs + "if(pX[" + str(head.feature) + "] > " + str(head.split) + "):\n"
                         if self.inKernel[head.rightChild.id] is True:
                             tmpOut= self.getImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
@@ -847,13 +847,13 @@ class OptimizedIFForestConverter(TreeConverter):
                             labelIdx += 1
                             code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                             labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
-                            labels += "{\n"
+                            labels += "\n"
                             tmpOut = self.getImplementation(tree,treeID, head.rightChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
                             labelIdx = int(tmpOut[2])
-                            labels += "}\n"
-                        code += tabs + "} else {\n"
+                            labels += "\n"
+                        code += tabs + "else:\n"
                         if self.inKernel[head.leftChild.id] is True:
                             tmpOut = self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
@@ -863,13 +863,13 @@ class OptimizedIFForestConverter(TreeConverter):
                             labelIdx += 1
                             code += tabs + '\t' + "goto Label"+str(treeID)+"_"+ str(labelIdx) + ";\n"
                             labels += "Label"+str(treeID)+"_"+str(labelIdx)+":\n"
-                            labels += "{\n"
+                            labels += "\n"
                             tmpOut = self.getImplementation(tree,treeID, head.leftChild, labelIdx,level + 1)
                             code += tmpOut[0]
                             labels += tmpOut[1]
                             labelIdx = int(tmpOut[2])
-                            labels += "}\n"
-                        code += tabs + "}\n"
+                            labels += "\n"
+                        code += tabs + "\n"
         return (code, labels, labelIdx)
 
     # only returns cpp code now
