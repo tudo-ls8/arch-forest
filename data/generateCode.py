@@ -410,7 +410,7 @@ def main(argv):
 
 
 	for f in sorted(os.listdir(basepath + "/text/")):
-		if f.endswith("RF_5.json"):
+		if f.endswith(".json"):
 			name = f.replace(".json","")
 			cppPath = basepath + "/cpp/" + target + "/" + name
 			print("Generating", cppPath)
