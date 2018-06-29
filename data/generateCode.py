@@ -216,6 +216,7 @@ from numba import njit
 import numpy as np
 
 pXlen = len(pX)
+predCnt = np.array([0,0,0,0,0,0,0])
 
 def main():
     # burn-in
@@ -223,13 +224,17 @@ def main():
 
     for m in range (2):
         for n in range(pXlen):
-            OptPathIfPredict(pX[n])
+            predictAll(pX[n])
 
     profile.run("timePrediction()")
 
+#@jit(cache=True)
 def timePrediction():
     for p in range(pXlen):
-        OptPathIfPredict(pX[p])
+        predictAll(pX[p])
+
+@jit(cache=True)
+def predictAll(pX):
 
 """
 
@@ -453,7 +458,7 @@ def main(argv):
 
 
 	for f in sorted(os.listdir(basepath + "/text/")):
-		if f.endswith("DT_5.json"):
+		if f.endswith(".json"):
 			name = f.replace(".json","")
 			cppPath = basepath + "/cpp/" + target + "/" + name
 			print("Generating", cppPath)

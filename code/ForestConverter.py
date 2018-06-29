@@ -241,8 +241,8 @@ class OptIfForestConverter:
 		numClasses = forest.getNumClasses()
 
 		headerCode = ""
-		cppCode = """@jit\ndef OptPathIfPredict(pX):\n"""
-
+		#cppCode = """@jit\ndef OptPathIfPredict(pX):\n"""
+		cppCode = ""
 		# headerCode = "float {namespace}_predict({feature_t} const pX[{dim}]);\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 		# cppCode = "float {namespace}_predict({feature_t} const pX[{dim}]) {\n".replace("{dim}", str(dim)).replace("{namespace}", namespace).replace("{feature_t}", featureType)
 		# cppCode += "float pred[{classes}] = {0};".replace("{classes}", str(numClasses))
@@ -263,17 +263,32 @@ class OptIfForestConverter:
 		# """.replace("{numClasses}", str(numClasses))
 		# cppCode += "}"
 		initCode = ""
-		cppCode += "\tpredCnt = np.array(["
-		for i in range(0,numClasses):
-			cppCode += "0,"
-		cppCode = cppCode[:-1] + "])\n"
+		#cppCode += "\tpredCnt = np.array(["
+		#for i in range(0,numClasses):
+		#	cppCode += "0,"
+		#cppCode = cppCode[:-1] + "])\n"
 
 		tLabel = ""
 		labelCode = ""
 
-		#TODO: BEGIN: insert switch cases here !
+		for i in range(len(forest.trees)):
+			cppCode += "\tpredict{tree_NR}(pX)\n".replace("{tree_NR}", str(i))
+
+
+		cppCode += "\n"
+
+		cppCode += """	pred = 0
+	cnt = predCnt[0]
+	for i in range(7):
+		if (predCnt[i] > cnt):
+			cnt = predCnt[i]
+			pred = i
+	return pred\n\n"""
+
 		for i in range(len(forest.trees)):
 			#cppCode += ("\n" + tabs4 + "case {nrIt}:\n".replace("{nrIt}", str(i)))
+			cppCode += "@jit(cache=True)\n"
+			cppCode += "def predict{tree_NR}(pX):\n".replace("{tree_NR}", str(i))
 			tCode, tLabel = self.treeConverter.getCode(forest.trees[i], i, numClasses)
 			cppCode += tCode
 			labelCode += tLabel
@@ -288,15 +303,7 @@ class OptIfForestConverter:
 
 		#for i in range(len(forest.trees)):
 		#	cppCode += "	predCnt[{namespace}_predict{id}(pX)]++;\n".replace("{id}", str(i)).replace("{namespace}", namespace)
-		cppCode += """	pred = 0
-	cnt = predCnt[0]
-	for i in range(7):
-		if (predCnt[i] > cnt):
-			cnt = predCnt[i]
-			pred = i
-	return pred
-
-if __name__ == "__main__":
+		cppCode += """if __name__ == "__main__":
 	main()
 		"""
 
