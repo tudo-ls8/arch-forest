@@ -11,7 +11,7 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from sklearn.externals import joblib
+import joblib
 
 sys.path.append('../../code/')
 import Forest
@@ -56,7 +56,7 @@ def testModel(roundSplit,XTrain,YTrain,XTest,YTest,model,name):
 
 	print("Saving model to PKL on disk")
 	joblib.dump(model, "text/"+name+".pkl")
-	
+
 	print("*** Summary ***")
 	print("#Examples\t #Features\t Accuracy\t Avg.Tree Height")
 	print(str(len(XTest)) + "\t" + str(len(XTest[0])) + "\t" + str(accuracy) + "\t" + str(mymodel.getAvgDepth()))

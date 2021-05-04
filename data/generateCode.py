@@ -17,7 +17,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.tree import _tree
 import timeit
-from sklearn.externals import joblib
+import joblib
 
 np.set_printoptions(threshold=np.inf)
 
@@ -161,7 +161,7 @@ measurmentCodeTemplate = """
 		var = var + delta*delta2;
 	}
 
-	//std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
+	//std :: cout << "Runtime per element (ns): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
 	std :: cout << avg << "," << var / (cnt - 1) << "," << min << "," << max << std :: endl;
 """
 

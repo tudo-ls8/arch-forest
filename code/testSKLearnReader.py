@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import pprint, json
 
-from sklearn.externals import joblib
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -39,7 +39,7 @@ def testModel(XTrain,YTrain,XTest,YTest,m):
 	for (x,y) in zip(XTest,YTest):
 		skpred1 = m.predict(x.reshape(1, -1))[0]
 		skpred2 = skmodel2.predict(x.reshape(1, -1))[0]
-			
+
 		mypred1 = mymodel1.predict(x)
 		mypred1 = mypred1.argmax()
 		mypred2 = mymodel2.predict(x)
@@ -52,7 +52,7 @@ def testModel(XTrain,YTrain,XTest,YTest,m):
 			print(mymodel1.pstr())
 
 			return False
-		
+
 		mymodelCnt1 += (mypred1 == y)
 		mymodelCnt2 += (mypred2 == y)
 		skModelCnt1 += (skpred1 == y)
