@@ -3,6 +3,7 @@ import numpy as np
 from functools import reduce
 import heapq
 import gc
+import os
 #import objgraph
 
 class StandardIFTreeConverter(TreeConverter):
@@ -36,7 +37,7 @@ class StandardIFTreeConverter(TreeConverter):
             # for i in range(len(head.prediction)):
             #     code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
 
-            return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" ;
+            return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" 
             #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
             #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
@@ -81,6 +82,7 @@ class StandardIFTreeConverter(TreeConverter):
         return headerCode, cppCode
 
 class OptimizedIFTreeConverter(TreeConverter):
+
     """ A IfTreeConverter converts a DecisionTree into its if-else structure in c language
     """
     def __init__(self, dim, namespace, featureType, architecture, orientation="path", budgetSize=32*1000):
@@ -94,6 +96,8 @@ class OptimizedIFTreeConverter(TreeConverter):
         self.orientation = orientation
         if self.orientation != "path" and self.orientation != "node" and self.orientation != "swap":
             raise NotImplementedError("Please use 'path' or 'node' or 'swap' for orientation")
+        self.nodeSizeTable = []
+        self.treeSize = 0
 
     # def getPaths(self, node = None, curPath = [], allpaths = None):
     #     if node is None:
@@ -108,6 +112,8 @@ class OptimizedIFTreeConverter(TreeConverter):
     #     return allpaths
 
     # SORT ALL PATH ACCORIDNG THEIR PROBABILITY
+
+
     def pathSort(self, tree):
         self.inKernel = {}
         #print(len(self.getPaths(tree.head, [], [])))
@@ -211,45 +217,54 @@ class OptimizedIFTreeConverter(TreeConverter):
                 self.inKernel[node.id] = True
 
 
-    def sizeOfNode(self, tree, node, splitDataType):
-        size = 0
+    def sizeOfNode(self, tree, node, featureType):
+        if self.architecture == "intel":
+            for i in range(len(self.nodeSizeTable)):
+                if(node.id == self.nodeSizeTable[i][0]):
+                    return self.nodeSizeTable[i][1]
+        elif self.architecture == "arm":
+            result = 0
+            #split node
+            if(node.prediction is None):
+                result = 8
+                if(featureType == 'int'):
+                    if(node.feature > 31):
+                        result += 2
+                    if(node.feature > 1023):
+                        result += 2
+                    if(node.split > 255):
+                        result += 2
+                    if(node.rightChild.prediction is not None and node.leftChild.prediction is not None):
+                        result -= 2
+                elif(featureType == 'char'):
+                    if(node.feature > 31):
+                        result += 2
+                    if(node.split > 255):
+                        result += 2
+                    if(node.rightChild.prediction is not None and node.leftChild.prediction is not None):
+                        result -= 2
+                elif(featureType == 'short'):
+                    result += 2
+                    if(node.split > 255):
+                        result += 2
+                    if(node.rightChild.prediction is not None and node.leftChild.prediction is not None):
+                        result -= 2
+                elif(featureType == 'float'):
+                    result = 24
+                    if(node.split > 255):
+                        result += 4
+                    if(node.rightChild.prediction is not None and node.leftChild.prediction is not None):
+                        result -= 2
+            #leaf node
+            else:
+                result = 3
+                if(np.argmax(node.prediction) > 255):
+                    result += 2
+            self.treeSize += result
+            return result
 
-        if node.prediction is not None:
-            if splitDataType == "int" and self.architecture == "arm":
-                size += 2*4
-            elif splitDataType == "float" and self.architecture == "arm":
-                size += 2*4
-            elif splitDataType == "int" and self.architecture == "intel":
-                size += 10
-            elif splitDataType == "float" and self.architecture == "intel":
-                size += 10
-            elif splitDataType == "int" and self.architecture == "ppc":
-                size += 2*4
-            elif splitDataType == "float" and self.architecture == "ppc":
-                size += 2*4
-        else:
-            # In O0, the basic size of a split node is 4 instructions for loading.
-            # Since a split node must contain a pair of if-else statements,
-            # one instruction for branching is not avoidable.
-            if splitDataType == "int" and self.architecture == "arm":
-                # this is for arm int (ins * bytes)
-                size += 5*4
-            elif splitDataType == "float" and self.architecture == "arm":
-                # this is for arm float
-                size += 8*4
-            elif splitDataType == "int" and self.architecture == "ppc":
-                # this is for ppc int (ins * bytes)
-                size += 5*4
-            elif splitDataType == "float" and self.architecture == "ppc":
-                # this is for ppc float
-                size += 8*4
-            elif splitDataType == "int" and self.architecture == "intel":
-                # this is for intel integer (bytes)
-                size += 28
-            elif splitDataType == "float" and self.architecture == "intel":
-                # this is for intel float (bytes)
-                size += 17
-        return size
+       
+
 
     def getSwapImplementation(self, treeID, head, level = 1):
         """ Generate the actual if-else implementation for a given node
@@ -276,7 +291,7 @@ class OptimizedIFTreeConverter(TreeConverter):
         if head.prediction is not None:
              # for i in range(len(head.prediction)):
              #    code += tabs + "pred[" + str(i) + "] += " + str(head.prediction[i]) + ";\n"
-                return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" ;
+                return tabs + "return " + str(int(np.argmax(head.prediction))) + ";\n" 
                 #return tabs + "return " + str(int(head.prediction)) + ";\n" ;
                 #return tabs + "return " + str(float(head.prediction)) + ";\n" ;
         else:
@@ -473,6 +488,12 @@ class OptimizedIFTreeConverter(TreeConverter):
 
         #print("GET IMPL")
         #print("\tPATH SORT")
+        if self.architecture == "intel":
+            self.createCppSectionFile(tree)
+        '''ncFile = open("nodeCount", "a")
+        ncFile.write(str(len(tree.nodes)))
+        ncFile.write("\n")
+        ncFile.close()'''
         if self.orientation == "path":
             self.pathSort(tree)
             output = self.getImplementation(tree, treeID, tree.head, 0)
@@ -498,6 +519,10 @@ class OptimizedIFTreeConverter(TreeConverter):
         #print("\tGET IMPL DONE")
 
         cppCode += "}\n"
+        anFile = open("allNode", "a")
+        anFile.write(str(treeID) + ' ' + str(self.treeSize) + '\n')
+        self.treeSize = 0
+        anFile.close()
 
         headerCode = "inline unsigned int {namespace}_predict{treeID}({feature_t} const pX[{dim}]);\n" \
                                         .replace("{treeID}", str(treeID)) \
@@ -506,3 +531,117 @@ class OptimizedIFTreeConverter(TreeConverter):
                                         .replace("{feature_t}", featureType)
 
         return headerCode, cppCode
+
+    def getLeafTestCpp(self, node):
+        leafTest = """__attribute__((section("test_leaf_{nid}"))) unsigned int test{nid}( {feature_t} const pX[{dim}]){
+            return {value};
+        }\n"""\
+        .replace("{nid}", str(node.id))\
+        .replace("{value}", str(int(np.argmax(node.prediction))))\
+        .replace("{dim}", str(self.dim))\
+        .replace("{feature_t}", self.getFeatureType())
+        return leafTest
+    
+    def getSplitTestCpp(self, node):
+        nidStr = ''
+        compare = '0'
+        if node.feature == 0:
+            nidStr = '__'
+            compare = '1'
+        nidStr += str(node.id)
+        splitTest = """__attribute__((section("test_split_{nid}"))) unsigned int test{nid}( {feature_t} const pX[{dim}]){
+            if( pX[{cmp}] <= 20 ){
+                if( pX[{feature}] <= {value} ){
+                    return 10;
+                }
+               else { return 40; }
+            }
+            else{ return 30; }
+        } \n"""\
+        .replace("{nid}",nidStr)\
+        .replace("{value}",str(node.split))\
+        .replace("{dim}",str(self.dim))\
+        .replace("{feature}",str(node.feature))\
+        .replace("{cmp}",compare)\
+        .replace("{feature_t}", self.getFeatureType())
+        return splitTest
+    
+    def createCppSectionFile(self, tree):
+        #initialize node size table
+        self.nodeSizeTable = []
+        #empty section define
+        cppStr = """__attribute__((section("leafEmpty"))) void emp( int const pX[{dim}]){} \n"""\
+            .replace("{dim}", str(self.dim))
+        cppStr += """__attribute__((section("splitReturnEmpty"))) unsigned int sp_return_emp( {feature_t} const pX[{dim}]){
+            return 40;
+            } \n"""\
+            .replace("{dim}", str(self.dim))\
+            .replace("{feature_t}", self.getFeatureType())
+        cppStr += """__attribute__((section("splitEmpty"))) unsigned int sp_emp( {feature_t} const pX[{dim}]){
+            if( pX[0] <= 20 ){
+               return 10;
+            }
+            else{ return 30; }
+        } \n"""\
+        .replace("{dim}", str(self.dim))\
+        .replace("{feature_t}", self.getFeatureType())
+        cppStr += """__attribute__((section("splitEmpty1"))) unsigned int sp_emp1( {feature_t} const pX[{dim}]){
+            if( pX[1] <= 20 ){
+               return 10;
+            }
+            else{ return 30; }
+        } \n"""\
+        .replace("{dim}", str(self.dim))\
+        .replace("{feature_t}", self.getFeatureType())
+        #create section file
+        for i in range(len(tree.nodes)):
+            if tree.nodes[i].prediction is None:
+                cppStr += self.getSplitTestCpp(tree.nodes[i])
+            else:
+                cppStr += self.getLeafTestCpp(tree.nodes[i])
+        f = open("sizeOfNode.cpp", "w")
+        f.write(cppStr)
+        f.close()
+        os.system("g++ sizeOfNode.cpp -c -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize")
+        os.system("objdump -h sizeOfNode.o > sizeOfNode")
+        #read sizeOfNode
+        f = open("sizeOfNode", "r")
+        lineList = f.readlines()
+        leafE = 0
+        splitE = 0 
+        splitE1 = 0
+        spReturnE = 0
+        #record the node size
+        #sf = open("splitRecord", "w")
+        #lf = open("leafRecord", "w")
+
+
+        for i in range(len(lineList)):
+            x = lineList[i].split()
+            if(len(x) > 3):
+                if(x[1][:4] == "test"):
+                    if x[1][5:9] == 'leaf':
+                        self.nodeSizeTable.append([ int(x[1][10:]), int( x[2], 16) - leafE])
+                        #record the node size
+                        #lf.write(x[1][10:] + " " + str(int( x[2], 16) - leafE) + '\n')
+                    elif x[1][5:12] == 'split__':
+                        self.nodeSizeTable.append([ int(x[1][13:]), int( x[2], 16) - splitE1])
+                        #record the node size
+                        #noid = int(x[1][13:])
+                        #sf.write(str(tree.nodes[noid].feature) + ' '+ str(tree.nodes[noid].split) + " " + str(int( x[2], 16) - splitE1) + '\n')
+                    else:
+                        self.nodeSizeTable.append([ int(x[1][11:]), int( x[2], 16) - splitE])
+                        #record the node size
+                        #noid = int(x[1][11:])
+                        #sf.write(str(tree.nodes[noid].feature) + ' '+ str(tree.nodes[noid].split) + " " + str(int( x[2], 16) - splitE1) + '\n')
+                elif(x[1] == 'leafEmpty'):
+                    leafE = int( x[2], 16)
+                elif(x[1] == 'splitEmpty'):
+                    splitE = int( x[2], 16) +spReturnE
+                elif(x[1] == 'splitEmpty1'):
+                    splitE1 = int( x[2], 16) +spReturnE
+                elif(x[1] == 'splitReturnEmpty'):
+                    spReturnE = int( x[2], 16) - leafE
+
+        #sf.close()
+        #lf.close()
