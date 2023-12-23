@@ -14,7 +14,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.tree import _tree
 import timeit
-from sklearn.externals import joblib
+import joblib
 
 sys.path.append('../code/python')
 
@@ -26,6 +26,7 @@ from ForestConverter import *
 from NativeTreeConverter import *
 from IfTreeConverter import *
 from MixConverter import *
+from ArrayTreeConverter import *
 
 # A template to test the generated code
 testCodeTemplate = """#include <iostream>
@@ -36,6 +37,9 @@ testCodeTemplate = """#include <iostream>
 #include <cassert>
 #include <tuple>
 #include <chrono>
+#ifdef __unix__
+#include <sys/resource.h>
+#endif
 
 {headers}
 
@@ -72,13 +76,6 @@ void readCSV({feature_t} * XTest, unsigned int * YTest) {
 
 int main(int argc, char const *argv[]) {
 
-	//std :: cout << "=== NEW PERFORMANCE TEST ===" << std :: endl;
-	//std :: cout << "Testing dimension:\t" << {DIM} << std :: endl;
-	//std :: cout << "Feature type:\t "<< "{feature_t}" << std :: endl;
-	//std :: cout << "Testing instances:\t" << {N} << std :: endl << std :: endl;
-	//std :: cout << "Loading testing data..." << std :: endl;
-
-
 	{allocMemory}
 	readCSV(XTest,YTest);
 
@@ -90,55 +87,51 @@ int main(int argc, char const *argv[]) {
 """
 
 measurmentCodeTemplate = """
+
+	const unsigned int repetitions = {num_repetitions}; 
+    long totalMemoryUsed = 0;
+    long long totalDuration = 0;
+    unsigned int totalAccuracy = 0;
+
 	/* Burn-in phase to minimize cache-effect and check if data-set is okay */
 	for (unsigned int i = 0; i < 2; ++i) {
-		unsigned int acc = 0;
 		for (unsigned int j = 0; j < {N}; ++j) {
 			unsigned int pred = {namespace}_predict(&XTest[{DIM}*j]);
-			acc += (pred == YTest[j]);
 		}
-
-		// SKLearn uses a weighted majority vote, whereas we use a "normal" majority vote
-		// Therefore, we may not match the accuracy of SKlearn perfectly!
-		/*if (acc != {target_acc}) {
-			std :: cout << "Target accuracy was not met!" << std :: endl;
-			std :: cout << "\t target: {target_acc}" << std :: endl;
-			std :: cout << "\t current:" << acc << std :: endl;
-			//return 1;
-		}*/
 	}
 
-	std::vector<float> runtimes;
-	std::vector<unsigned int> accuracies;
+	unsigned int acc;
 	unsigned int pred;
-	for (unsigned int i = 0; i < {num_repetitions}; ++i) {
-		unsigned int acc = 0;
-    	auto start = std::chrono::high_resolution_clock::now();
+
+
+	for (unsigned int rep = 0; rep < repetitions; ++rep) {
+		acc = 0;
+		auto start = std::chrono::high_resolution_clock::now();
 		for (unsigned int j = 0; j < {N}; ++j) {
-			pred = {namespace}_predict(&XTest[{DIM}*j]);
-			acc += (pred == YTest[j]);
-			//acc += pred;
-		}
-    	auto end = std::chrono::high_resolution_clock::now();
-    	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+				pred = {namespace}_predict(&XTest[{DIM}*j]);
+				acc += (pred == YTest[j]);
+			}
+		auto end = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-		runtimes.push_back((float) (duration.count() / {N}.0f));
+		totalDuration += duration.count();
+        totalAccuracy += acc;
+
+        #ifdef __unix__
+        totalMemoryUsed += getMemoryUsage();
+        #endif
 	}
 
-	// Something close to welfords algorithm to estimate variance and mean on the fly
-	float avg = 0.0f;
-	float var = 0.0f;
-	unsigned int cnt = 0;
-	for (auto d : runtimes) {
-		cnt++;
-		float delta = d - avg;
-		avg = avg + delta / cnt;
-		float delta2 = d - avg;
-		var = var + delta*delta2;
-	}
 
-	//std :: cout << "Runtime per element (ms): " << avg << " ( " << var / (cnt - 1) << " )" <<std :: endl;
-	std :: cout << avg << "," << var / (cnt - 1) << std :: endl;
+	std::cout << "Average time taken: " << (totalDuration / repetitions) << " microseconds" << std::endl;
+    #ifdef __unix__
+    std::cout << "Average memory usage: " << (totalMemoryUsed / repetitions) << " kilobytes" << std::endl;
+    #endif
+    std::cout << "Average accuracy: " << (static_cast<double>(totalAccuracy) / repetitions) << " from 1625 predictions" << std::endl;
+
+    double throughput = (1625.0 * repetitions) / (totalDuration / 1e6); // predictions per second
+    std::cout << "Throughput: " << throughput << " predictions/second" << std::endl;
+
 """
 
 def writeFiles(basepath, basename, header, cpp):
@@ -306,10 +299,10 @@ FLAGS = -std=c++11 -Wall -O3 -funroll-loops -ftree-vectorize
 
 all:
 """
-			# print("\tGenerating If-Trees")
-			# converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
-			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
-			# Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
+			print("\tGenerating If-Trees")
+			converter = ForestConverter(StandardIFTreeConverter(dim, "StandardIfTree", featureType))
+			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardIfTree", featureType, loadedForest, testname, reps)
+			Makefile += "\t$(COMPILER) $(FLAGS) StandardIfTree.h StandardIfTree.cpp testStandardIfTree.cpp -o testStandardIfTree" + "\n"
 			# for s in budgetSizes:
 			# 	print("\tIf-Tree for budget", s)
 
@@ -325,11 +318,11 @@ all:
 			# 	# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "OptimizedSwapIfTree_" + str(s), featureType, loadedForest, testname, reps)
 			# 	# Makefile += "\t$(COMPILER) $(FLAGS) OptimizedSwapIfTree_" + str(s)+".h" + " OptimizedSwapIfTree_" + str(s)+".cpp testOptimizedSwapIfTree_" + str(s)+".cpp -o testOptimizedSwapIfTree_" + str(s) + "\n"
 
-			print("\tGenerating NativeTrees")
+			# print("\tGenerating NativeTrees")
 
-			converter = ForestConverter(NaiveNativeTreeConverter(dim, "NaiveNativeTree", featureType))
-			generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "NaiveNativeTree", featureType, loadedForest, testname, reps)
-			Makefile += "\t$(COMPILER) $(FLAGS) NaiveNativeTree.h NaiveNativeTree.cpp testNaiveNativeTree.cpp -o testNaiveNativeTree\n"
+			# converter = ForestConverter(NaiveNativeTreeConverter(dim, "NaiveNativeTree", featureType))
+			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "NaiveNativeTree", featureType, loadedForest, testname, reps)
+			# Makefile += "\t$(COMPILER) $(FLAGS) NaiveNativeTree.h NaiveNativeTree.cpp testNaiveNativeTree.cpp -o testNaiveNativeTree\n"
 
 			# converter = ForestConverter(StandardNativeTreeConverter(dim, "StandardNativeTree", featureType))
 			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "StandardNativeTree", featureType, loadedForest, testname, reps)
@@ -345,6 +338,11 @@ all:
 			# print("\tGenerating MixTrees")
 			# converter = ForestConverter(MixConverter(dim, "MixTree", featureType, target))
 			# generateClassifier(cppPath + "/", targetAcc, X,Y, converter, "MixTree", featureType, loadedForest, testname, reps)
+			
+			# print("\tGenerating DTarr trees")
+			# converter = ForestConverter(ArrayTreeConverter(dim, "DTarr", featureType))
+			# generateClassifier(cppPath + "/", targetAcc, dim, numTest, numClasses, converter, "DTarr", featureType, loadedForest, testname, reps)
+			# Makefile += "\t$(COMPILER) $(FLAGS) DTarr.h DTarr.cpp testDTarr.cpp -o testDTarr" + "\n"
 
 			if target == "intel":
 				compiler = "g++"

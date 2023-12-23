@@ -10,7 +10,7 @@ from sklearn import tree
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.externals import joblib
+import joblib
 
 sys.path.append('../../code/python')
 from RandomForest import RandomForest
@@ -38,7 +38,7 @@ def main(argv):
 
 			outFile.write(line + "\n")
 
-	NTrees = [25]
+	NTrees = [1]
 	for ntree in NTrees:
 		clf = RandomForestClassifier(n_estimators=ntree, n_jobs=4) 
 		print("Fitting model on " + str(len(XTrain)) + " data points")
